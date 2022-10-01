@@ -1,6 +1,37 @@
 <!DOCTYPE html>
-<html lang="en"> 
-<body>
-Hello World
-</body>
+  <head>
+    <title>CSC864 Project</title>
+  </head>
+  <body>
+    <div><input type="text" id="search-box"><button onclick="search()">SEARCH</button></div>
+    <div id="content"></div>
+  </body>
 </html>
+
+<script>
+  let results = []
+  const url_base = "https://www.googleapis.com/customsearch/v1?key=AIzaSyCbWbE7OHpGHPTv3wERt5uU9MjaCp4T4Mc&cx=136594abed8664b18"
+
+  function search() {
+    let results = []
+    
+    // maxmimum results we can fetch is 100 which is 10 rounds
+    // set the second expression to reduce the request amount
+    const query = document.getElementById("search-box").value
+    for (let i = 0; i < 1; i++) {  
+      url = url_base + "&q=" + query + "&start=" + (i * 10 + 1);
+
+      // fetch ten results and add it to the global data
+      fetch(url).then(res => {
+        return res.json()
+      }).then(data => {
+        data["items"].forEach(element => {
+          results.push({title: element["title"]})
+          document.getElementById("content").append(
+          document.createElement("br"),
+          document.createTextNode(element["title"]))
+        });
+      })
+    }
+  }
+</script>
