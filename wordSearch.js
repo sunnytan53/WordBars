@@ -1,12 +1,9 @@
 const natural = require("natural");
-
 const WordNet = require("node-wordnet")
 var wordnet = new WordNet()
 let word = "searching";
 
-function get_root_word(word) {
-    return natural.PorterStemmer.stem(word);
-}
+function get_root_word(word) {  return natural.PorterStemmer.stem(word);}
 
 //Base Lookup function
 /*
@@ -44,6 +41,7 @@ function list_synonyms(word){
         return total_synonyms;
     });
 }
+
 let rootWord = get_root_word(word);
 let list = list_synonyms(word);
 
