@@ -1,3 +1,4 @@
+//var wordNet = require('wordnet-magic');
 const WordNet = require("node-wordnet")
 //const wordnet = new WordNet("../node_modules/wordnet-db/dict")
 //console.log(wordnet);
