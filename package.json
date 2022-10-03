@@ -2,6 +2,7 @@
   "dependencies": {
     "express": "^4.18.1",
     "fetch": "^1.1.0",
+    "natural": "^5.2.3",
     "node-wordnet": "^0.1.12",
     "wndb-with-exceptions": "^3.0.2",
     "wordnet": "^2.0.0",
