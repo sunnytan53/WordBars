@@ -4,6 +4,10 @@ const WordNet = require("node-wordnet")
 var wordnet = new WordNet()
 let word = "searching";
 
+function get_root_word(word) {
+    return natural.PorterStemmer.stem(word);
+}
+
 //Base Lookup function
 /*
 wordnet.lookup('ate', function(results) {
@@ -16,7 +20,7 @@ wordnet.lookup('ate', function(results) {
         console.log(result.gloss);
     });
 });*/
-/*
+
 function list_synonyms(word){
     let list_synonyms = [];
     wordnet.lookup(word, function(results) {
@@ -37,15 +41,9 @@ function list_synonyms(word){
             }
         }
         //console.log(total_synonyms);
+        return total_synonyms;
     });
 }
-list_synonyms(word);
-*/
-/*
-wordnet.morphy(word, function(err,data){
-    console.log(data);
-})*/
+let rootWord = get_root_word(word);
+let list = list_synonyms(word);
 
-//console.log(natural.PorterStemmer.stem("Searching"));
-natural.PorterStemmer.attach();
-console.log("searching".stem());
