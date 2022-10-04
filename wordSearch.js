@@ -1,7 +1,30 @@
 const natural = require("natural");
 const WordNet = require("node-wordnet")
 var wordnet = new WordNet()
-let word = "searching";
+let userInput = "I love to have eat potatoes";
+let userInputRemoved = remove_common_words(userInput);
+let inputSplit = userInputRemoved.split(" ");
+
+let rootWord = get_root_word(userInput);
+let list = list_synonyms(userInput);
+
+function remove_common_words(result){
+    // you get a json object
+    whole_strng = result["title"] + result["snippet"]
+    var uselessWordsArray = 
+        [
+          "a", "at", "be", "can", "cant", "could", "couldnt", 
+          "do", "does", "how", "i", "in", "is", "many", "much", "of", 
+          "on", "or", "should", "shouldnt", "so", "such", "the", 
+          "them", "they", "to", "us",  "we", "what", "who", "why", 
+          "with", "wont", "would", "wouldnt", "you", "to"
+        ];
+	let expStr = uselessWordsArray.join(" | ");
+    phrase = phrase.replace(/[^a-zA-Z0-9 ]/g, '');
+	phrase.replace(new RegExp(expStr, 'gi'), '');
+    // return phrase;
+    // return a frequency table (hashmap)
+}
 
 function get_root_word(word) {  return natural.PorterStemmer.stem(word);}
 
@@ -41,7 +64,4 @@ function list_synonyms(word){
         return total_synonyms;
     });
 }
-
-let rootWord = get_root_word(word);
-let list = list_synonyms(word);
-
+console.log(remove_common_words(userInput));
