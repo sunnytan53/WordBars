@@ -2,9 +2,10 @@
 var results = [];
 const content = document.getElementById("content");
 const wordbars = document.getElementById("word-bars");
+const searchBox = document.getElementById("search-box")
 const searchButton = document.getElementById("search-button");
 
-function showData(data) {
+function showData() {
     content.innerHTML = "";
     results.forEach(element => {
         content.innerHTML += `<h3>${element["title"]}</h3><br/><h5>${element["snippet"]}</h5><br/>`;
@@ -18,7 +19,7 @@ searchButton.onclick = async function () {
     wordbars.innerHTML = "<h2>WordBars Area (under devleopment)</h2>";
 
     // alert empty query
-    query = document.getElementById("search-box").value;
+    query = searchBox.value;
     if (!query) {
         content.innerHTML = "query can NOT be empty!";
         wordbars.innerHTML = "";
@@ -43,10 +44,10 @@ searchButton.onclick = async function () {
     showData();
 };
 
-// not working
-// searchButton.addEventListener("keypress", function (event) {
-//     if (event.key === "Enter") {
-//         event.preventDefault();
-//         searchButton.click();
-//     }
-// });
+// press enter: clicking search button
+searchBox.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        searchButton.click();
+    }
+});
