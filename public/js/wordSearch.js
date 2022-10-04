@@ -3,14 +3,15 @@ const WordNet = require("node-wordnet")
 var wordnet = new WordNet()
 let userInput = "I love to have eat potatoes";
 let userInputRemoved = remove_common_words(userInput);
-let inputSplit = userInputRemoved.split(" ");
+//let inputSplit = userInputRemoved.split(" ");
 
-let rootWord = get_root_word(userInput);
-let list = list_synonyms(userInput);
+//let rootWord = get_root_word(userInput);
+//let list = list_synonyms(userInput);
 
-function remove_common_words(result){
+let remove_common_words = function(result){
     // you get a json object
-    whole_strng = result["title"] + result["snippet"]
+    //whole_strng = result["title"] + result["snippet"]
+    let str = result;
     var uselessWordsArray = 
         [
           "a", "at", "be", "can", "cant", "could", "couldnt", 
@@ -20,14 +21,13 @@ function remove_common_words(result){
           "with", "wont", "would", "wouldnt", "you", "to"
         ];
 	let expStr = uselessWordsArray.join(" | ");
-    phrase = phrase.replace(/[^a-zA-Z0-9 ]/g, '');
-	phrase.replace(new RegExp(expStr, 'gi'), '');
-    // split words into an array of words
-    // count words
-    // return a frequency table (hashmap)
+    str = str.replace(/[^a-zA-Z0-9 ]/g, '');
+	str.replace(new RegExp(expStr, 'gi'), '');
+    return str;
+    
 }
 
-function get_root_word(word) {  return natural.PorterStemmer.stem(word);}
+//function get_root_word(word) {  return natural.PorterStemmer.stem(word);}
 
 //Base Lookup function
 /*
@@ -41,7 +41,7 @@ wordnet.lookup('ate', function(results) {
         console.log(result.gloss);
     });
 });*/
-
+/*
 function list_synonyms(word){
     let list_synonyms = [];
     wordnet.lookup(word, function(results) {
@@ -64,5 +64,11 @@ function list_synonyms(word){
         //console.log(total_synonyms);
         return total_synonyms;
     });
-}
+}*/
 console.log(remove_common_words(userInput));
+
+function get_frequency(){
+    // split words into an array of words
+    // count words
+    // return a frequency table (hashmap)
+}
