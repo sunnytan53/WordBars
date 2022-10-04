@@ -1,32 +1,13 @@
 const natural = require("natural");
 const WordNet = require("node-wordnet")
-var wordnet = new WordNet()
+var wordnet = new WordNet();
 let userInput = "I love to have eat potatoes";
 let userInputRemoved = remove_common_words(userInput);
 let inputSplit = userInputRemoved.split(" ");
 
-let rootWord = get_root_word(userInput);
-let list = list_synonyms(userInput);
-
-function remove_common_words(result){
-    // you get a json object
-    whole_strng = result["title"] + result["snippet"]
-    var uselessWordsArray = 
-        [
-          "a", "at", "be", "can", "cant", "could", "couldnt", 
-          "do", "does", "how", "i", "in", "is", "many", "much", "of", 
-          "on", "or", "should", "shouldnt", "so", "such", "the", 
-          "them", "they", "to", "us",  "we", "what", "who", "why", 
-          "with", "wont", "would", "wouldnt", "you", "to"
-        ];
-	let expStr = uselessWordsArray.join(" | ");
-    phrase = phrase.replace(/[^a-zA-Z0-9 ]/g, '');
-	phrase.replace(new RegExp(expStr, 'gi'), '');
-    // return phrase;
-    // return a frequency table (hashmap)
-}
-
-function get_root_word(word) {  return natural.PorterStemmer.stem(word);}
+//let rootWord = get_root_word(userInput);
+//let list = list_synonyms(userInput);
+//function get_root_word(word) {  return natural.PorterStemmer.stem(word);}
 
 //Base Lookup function
 /*
@@ -40,7 +21,7 @@ wordnet.lookup('ate', function(results) {
         console.log(result.gloss);
     });
 });*/
-
+/*
 function list_synonyms(word){
     let list_synonyms = [];
     wordnet.lookup(word, function(results) {
@@ -63,5 +44,32 @@ function list_synonyms(word){
         //console.log(total_synonyms);
         return total_synonyms;
     });
+}*/
+
+function remove_common_words(result) {
+    // you get a json object
+    //whole_strng = result["title"] + result["snippet"]
+	let str = result;
+    var uselessWordsArray = 
+        [
+          "a", "at", "be", "can", "cant", "could", "couldnt", 
+          "do", "does", "how", "i", "in", "is", "many", "much", "of", 
+          "on", "or", "should", "shouldnt", "so", "such", "the", 
+          "them", "they", "to", "us",  "we", "what", "who", "why", 
+          "with", "wont", "would", "wouldnt", "you"
+        ];
+			
+	var expStr = uselessWordsArray.join(" | ");
+	str = str.replace(/[^a-zA-Z0-9 ]/g, '');
+	return str.replace(new RegExp(expStr, 'gi'), ' ');
+  }
+
+
+
+function get_Frequency(result){
+    inputSplit.array.forEach();
+
+
+    // return a frequency table (hashmap)
 }
-console.log(remove_common_words(userInput));
+//console.log(inputSplit);
