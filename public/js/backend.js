@@ -1,52 +1,74 @@
-// global variables
-var results = [];
-const content = document.getElementById("content");
-const wordbars = document.getElementById("word-bars");
-const searchButton = document.getElementById("search-button");
+const natural = require("natural");
+const WordNet = require("node-wordnet")
+var wordnet = new WordNet()
+let userInput = "I love to have eat potatoes";
+let userInputRemoved = remove_common_words(userInput);
+//let inputSplit = userInputRemoved.split(" ");
 
-function showData(data) {
-    content.innerHTML = "";
-    results.forEach(element => {
-        content.innerHTML += `<h3>${element["title"]}</h3><br/><h5>${element["snippet"]}</h5><br/>`;
-    });
+//let rootWord = get_root_word(userInput);
+//let list = list_synonyms(userInput);
+
+let remove_common_words = function(result){
+    // you get a json object
+    //whole_strng = result["title"] + result["snippet"]
+    let str = result;
+    var uselessWordsArray = 
+        [
+          "a", "at", "be", "can", "cant", "could", "couldnt", 
+          "do", "does", "how", "i", "in", "is", "many", "much", "of", 
+          "on", "or", "should", "shouldnt", "so", "such", "the", 
+          "them", "they", "to", "us",  "we", "what", "who", "why", 
+          "with", "wont", "would", "wouldnt", "you", "to"
+        ];
+	let expStr = uselessWordsArray.join(" | ");
+    str = str.replace(/[^a-zA-Z0-9 ]/g, '');
+	str.replace(new RegExp(expStr, 'gi'), '');
+    return str;
+    
 }
 
-searchButton.onclick = async function () {
-    // remove old results, also letting user that we are fetching new results
-    results = [];
-    content.innerHTML = "";
-    wordbars.innerHTML = "<h2>WordBars Area (under devleopment)</h2>";
+//function get_root_word(word) {  return natural.PorterStemmer.stem(word);}
 
-    // alert empty query
-    query = document.getElementById("search-box").value;
-    if (!query) {
-        content.innerHTML = "query can NOT be empty!";
-        wordbars.innerHTML = "";
-        return;
-    }
-
-    // fetch max allowed amount of results
-    // based on API Doc, this amount is 50, but after test, it is only 20
-    await fetch("https://api.bing.microsoft.com/v7.0/search?count=50&q=" + query,
-        { headers: { "Ocp-Apim-Subscription-Key": "68dc5cf46ecc419688a1066dd7b2b9d5" } })
-        .then(response => response.json())
-        .then(data => {
-            data["webPages"]["value"].forEach(element => {
-                results.push({
-                    title: element["name"],
-                    snippet: element["snippet"],
-                    url: element["url"]
-                });
-            });
+//Base Lookup function
+/*
+wordnet.lookup('ate', function(results) {
+    results.forEach(function(result) {
+        console.log('------------------------------------');
+        console.log(result.pos);
+        console.log(result.lemma);
+        console.log(result.synonyms);
+        console.log(result.pos);
+        console.log(result.gloss);
+    });
+});*/
+/*
+function list_synonyms(word){
+    let list_synonyms = [];
+    wordnet.lookup(word, function(results) {
+        results.forEach(function(result) {
+            //console.log(result.synonyms);
+            list_synonyms.push(result.synonyms);
         });
+        let total_synonyms = [];
+        for (let synonym in list_synonyms) {
+            for (let word in list_synonyms[synonym]){
+                total_synonyms.push(list_synonyms[synonym][word]);
+            }
+        }
+        for( var i = 0; i < total_synonyms.length; i++){                  
+            if ( total_synonyms[i] === word) { 
+                total_synonyms.splice(i, 1); 
+                i--; 
+            }
+        }
+        //console.log(total_synonyms);
+        return total_synonyms;
+    });
+}*/
+console.log(remove_common_words(userInput));
 
-    showData();
-};
-
-// not working
-// searchButton.addEventListener("keypress", function (event) {
-//     if (event.key === "Enter") {
-//         event.preventDefault();
-//         searchButton.click();
-//     }
-// });
+function get_frequency(){
+    // split words into an array of words
+    // count words
+    // return a frequency table (hashmap)
+}
