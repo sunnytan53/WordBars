@@ -8,7 +8,7 @@ function showData() {
     content.innerHTML = "";
     getResults([]).forEach(element => {
         console.log(element);
-        content.innerHTML += element.stringify() + "<br/>";
+        content.innerHTML += JSON.stringify(element) + "<br/><br/><br/>";
     });
 }
 
@@ -309,10 +309,12 @@ testButton.onclick = async function () {
 
 // BACKEND STARTS HERE
 // BELOW ARE template methods
+var globalResults = []
 
 function clearResults() {
     // simply set your global array = []
     // nothing to return
+    globalResults = []
 }
 
 function addResult(element, titleKey, snippetKey, urlKey) {
@@ -352,6 +354,7 @@ function addResult(element, titleKey, snippetKey, urlKey) {
     // no pre-process this step!!!
 
     // nothing to return
+    globalResults.push(element)
 }
 
 function getResults(selectedWords) {
@@ -366,10 +369,12 @@ function getResults(selectedWords) {
 
     if (selectedWords.length == 0) {
         // return top 20 results of original order of results
+        return globalResults
     }
     else {
         // return a new sorted result with top 20
         // call your sorting method, or consturct them here
         // NOTE: do NOT modify globall result, this is a new result
+        return globalResults
     }
 }
