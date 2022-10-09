@@ -7,8 +7,14 @@ const searchButton = document.getElementById("search-button");
 function showData() {
     content.innerHTML = "";
     getResults([]).forEach(element => {
-        console.log(element);
-        content.innerHTML += JSON.stringify(element) + "<br/><br/><br/>";
+        content.innerHTML += JSON.stringify(element) + "<br/>";
+    });
+}
+
+function showFrequency() {
+    // wordbars.innerHTML = "";
+    getFrequencyArray().forEach(element => {
+        wordbars.innerHTML += element[0] + ": " + element[1] + "<br/>";
     });
 }
 
@@ -368,12 +374,19 @@ function getResults(selectedWords) {
 
     if (selectedWords.length == 0) {
         // return top 20 results of original order of results
-        return globalResults
+        return globalResults;
     }
     else {
         // return a new sorted result with top 20
         // call your sorting method, or consturct them here
         // NOTE: do NOT modify globall result, this is a new result
-        return globalResults
+        return globalResults;
     }
+}
+
+function getFrequencyArray() {
+    // you should return frequency in sorted array!!!
+    // this part is tricy but only takes a few lines
+    // just search "javascript dictionary sort" and there are a bunch of answers
+    // the format should be [[word1, wordFrequency1], [word2, wordFrequency2], ...]
 }
