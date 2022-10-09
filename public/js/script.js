@@ -351,7 +351,6 @@ function addResult(element, titleKey, snippetKey, urlKey) {
     // you can rename the keys if you want since you are backend!\
     // preprocess save the frequency table into EACH single result
     // and add it to the global array
-    // no pre-process this step!!!
 
     // nothing to return
     globalResults.push(element)
