@@ -1,10 +1,6 @@
 const natural = require("natural");
 const WordNet = require("node-wordnet")
 var wordnet = new WordNet();
-let userInput = "I love to have eat potatoes";
-let userInputRemoved = remove_common_words(userInput);
-let inputSplit = userInputRemoved.split(" ");
-
 //let rootWord = get_root_word(userInput);
 //let list = list_synonyms(userInput);
 //function get_root_word(word) {  return natural.PorterStemmer.stem(word);}
@@ -48,8 +44,8 @@ function list_synonyms(word){
 
 function remove_common_words(result) {
     // you get a json object
-    //whole_strng = result["title"] + result["snippet"]
-	let str = result;
+    //let whole_str = result["title"] + result["snippet"];
+    let str = result;
     var uselessWordsArray = 
         [
           "a", "at", "be", "can", "cant", "could", "couldnt", 
@@ -67,9 +63,28 @@ function remove_common_words(result) {
 
 
 function get_Frequency(result){
-    inputSplit.array.forEach();
 
+    let frequency = new Map();
 
+    let whole_str = "I I okay I";
+    let strReduced = remove_common_words(whole_str);
+    let strSplit = strReduced.split(" ");
+
+    strSplit.forEach(element => {
+        if(frequency.has(element)){
+            frequency.set(element, frequency.get(element).value+1);
+            return;
+        }
+        frequency.set(element,1);
+
+    });
+    /*
+    for (let [key, value] of  frequency.entries()) {
+        console.log(key + " = " + value)
+    }*/
+    const min = Math.min(frequency.values());
+    console.log(min);
+    return frequency;
     // return a frequency table (hashmap)
 }
-//console.log(inputSplit);
+console.log(get_Frequency("I love eating them Potatoes"));
