@@ -1,6 +1,8 @@
 const natural = require("natural");
 const WordNet = require("node-wordnet")
 var wordnet = new WordNet();
+//let global_frequency = new Map();
+
 //let rootWord = get_root_word(userInput);
 //let list = list_synonyms(userInput);
 //function get_root_word(word) {  return natural.PorterStemmer.stem(word);}
@@ -45,7 +47,6 @@ function list_synonyms(word){
 function remove_common_words(result) {
     // you get a json object
     //let whole_str = result["title"] + result["snippet"];
-    let str = result;
     var uselessWordsArray = 
         [
           "a", "at", "be", "can", "cant", "could", "couldnt", 
@@ -54,37 +55,53 @@ function remove_common_words(result) {
           "them", "they", "to", "us",  "we", "what", "who", "why", 
           "with", "wont", "would", "wouldnt", "you"
         ];
-			
-	var expStr = uselessWordsArray.join(" | ");
-	str = str.replace(/[^a-zA-Z0-9 ]/g, '');
-	return str.replace(new RegExp(expStr, 'gi'), ' ');
-  }
+    results = result.toLowerCase().replace(/\s+/g, ' ').trim();    
+	results = results.replace(/[^a-zA-Z0-9 ]/g, '');
+    results.replace(uselessWordsArray, '');
+    //console.log(results);
+    return results;
+}
 
 
 
 function get_Frequency(result){
 
     let frequency = new Map();
-
-    let whole_str = "I I okay I";
-    let strReduced = remove_common_words(whole_str);
+    let strReduced = remove_common_words(result);
     let strSplit = strReduced.split(" ");
 
     strSplit.forEach(element => {
         if(frequency.has(element)){
-            frequency.set(element, frequency.get(element).value+1);
+            frequency.set(element, frequency.get(element)+1);
             return;
         }
         frequency.set(element,1);
-
     });
-    /*
+    
     for (let [key, value] of  frequency.entries()) {
         console.log(key + " = " + value)
-    }*/
-    const min = Math.min(frequency.values());
-    console.log(min);
-    return frequency;
-    // return a frequency table (hashmap)
+    }
+    //const min = Math.min(...frequency.values());
+    return new Map([...frequency].sort((a, b) => String(a[1]).localeCompare(b[1])));
 }
-console.log(get_Frequency("I love eating them Potatoes"));
+function sort_Global_Frequency(global_frequency){
+    /*global_frequency.forEach(element => { 
+    });
+    */
+    let global_arr = [];
+    for(var i = 0; i < global_frequency.length; i++) {
+        global_arr.push(global_frequency[i]);
+    }
+    global_arr.sort(function(a, b) {    return a.frequency - b.frequency; });   
+    return global_arr;
+}
+
+
+console.log(get_Frequency("I love I hi hi hi loooove them potatoes"));
+
+
+
+//sort a map by string keys:
+//new Map([...map].sort((a, b) => String(a[0]).localeCompare(b[0])))
+//sort a map by string values:
+//new Map([...map].sort((a, b) => String(a[1]).localeCompare(b[1])))
