@@ -38,7 +38,7 @@ searchButton.onclick = async function () {
         .then(response => response.json())
         .then(data => {
             data["webPages"]["value"].forEach(element => {
-                addResult(element);
+                addResult(element["name"], element["snippet"], element["url"]);
             });
         });
 
