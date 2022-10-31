@@ -323,43 +323,26 @@ function clearResults() {
     globalResults = []
 }
 
-function addResult(element, titleKey, snippetKey, urlKey) {
-    // element is a raw json object I got from Bing, here is one example:
-    // {
-    //     "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0",
-    //     "contractualRules": [
-    //         {
-    //             "_type": "ContractualRules/LicenseAttribution",
-    //             "targetPropertyName": "snippet",
-    //             "targetPropertyIndex": 0,
-    //             "mustBeCloseToContent": true,
-    //             "license": {
-    //                 "name": "CC-BY-SA",
-    //                 "url": "http://creativecommons.org/licenses/by-sa/3.0/"
-    //             },
-    //             "licenseNotice": "Text under CC-BY-SA license"
-    //         }
-    //     ],
-    //     "name": "Computer science - Wikipedia",
-    //     "url": "https://en.wikipedia.org/wiki/Computer_science",
-    //     "isFamilyFriendly": true,
-    //     "displayUrl": "https://en.wikipedia.org/wiki/Computer_science",
-    //     "snippet": "Computer science is the study of computation, automation, and information. [1] Computer science spans theoretical disciplines (such as algorithms, theory of computation, information theory, and automation) to practical disciplines (including the design and implementation of hardware and software ).",
-    //     "dateLastCrawled": "2022-10-05T12:30:00.0000000Z",
-    //     "language": "en",
-    //     "isNavigational": false
-    // }
+
+function addResult(title, snippet, url) {
+    //console.log(results);
 
     // The three keys corresponding to the values we need to store
     // this is a subject to change, but right now these are what we need
-
+    
     // This function is aiming to store necessary data, (e.g. hashmap)
     // you can rename the keys if you want since you are backend!\
     // preprocess save the frequency table into EACH single result
     // and add it to the global array
-
+    let results = title+ " " + snippet;
+    results = remove_common_words(results);
     // nothing to return
-    globalResults.push(element)
+    globalResults.push({
+        "title": title,
+        "snippet": snippet,
+        "url": url,
+        "frequency": getLocalFrequencyTable(results)
+    });
 }
 
 function getResults(selectedWords) {
@@ -389,4 +372,40 @@ function getFrequencyArray() {
     // this part is tricy but only takes a few lines
     // just search "javascript dictionary sort" and there are a bunch of answers
     // the format should be [[word1, wordFrequency1], [word2, wordFrequency2], ...]
+}
+
+
+function remove_common_words(results) {
+    // you get a json object
+    //let whole_str = result["title"] + result["snippet"];
+    var uselessWordsArray = 
+        [
+          "a", "at", "be", "can", "cant", "could", "couldnt", 
+          "do", "does", "how", "i", "in", "is", "many", "much", "of", 
+          "on", "or", "should", "shouldnt", "so", "such", "the", 
+          "them", "they", "to", "us",  "we", "what", "who", "why", 
+          "with", "wont", "would", "wouldnt", "you"
+        ];
+    results = ' ' + results + ' ';
+    results = results.toLowerCase().replace(/\s+/g, ' ').trim();    
+	results = results.replace(/[^a-zA-Z0-9 ]/g, '');
+    results.replace(uselessWordsArray, '');
+    return results;
+}
+
+function getLocalFrequencyTable(results){
+    let frequencyTable = new Map();
+    let resultsSplit = results.split(" ");
+    resultsSplit.forEach(element => {
+        if(frequencyTable.has(element)){
+            frequencyTable.set(element, frequencyTable.get(element)+1);
+            return;
+        }
+        frequencyTable.set(element,1);
+    });
+    /*
+    for (let [key, value] of  frequency.entries()) {
+        console.log(key + " = " + value)
+    }*/
+    return frequencyTable;
 }
