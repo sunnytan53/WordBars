@@ -304,7 +304,7 @@ testButton.onclick = async function () {
     ];
 
     fake.forEach(element => {
-        addResult(element);
+        addResult(element["name"], element["snippet"], element["url"]);
     });
 
     showData();
