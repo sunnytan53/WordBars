@@ -372,7 +372,6 @@ function getResults(selectedWords) {
         }
         // console.log(freqArr);
         freqArr = freqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
-        console.log(freqArr);
         return [globalResults, freqArr];
     }
     else {
