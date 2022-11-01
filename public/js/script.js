@@ -383,19 +383,26 @@ function getResults(selectedWords) {
         const array = [];
         globalResults.forEach(result => {
             for(let word of selectedWords){
+                count = 0;
                 if (result["frequency"].has(word)) {
+                    count += 1;
                     array.push(result);
-                    break;
+                    // break;
                 }
+                // if count == selectedWords.length {}
             }
         })
-        const freqArr = [];
-        for (let [key, value] of localFrequency.entries()) {
-            freqArr.push([key, value]);
+        selectedFreqArr = []; // [[result, allValuesOfSelectedWords]]
+        for (result of array) {
+            allValuesOfSelectedWords = 0;
+            for (select of selectedWords){
+                // add to all values
+                allValuesOfSelectedWords += result["frequency"][select]; 
+                selectedFreqArr.push([result,allValuesOfSelectedWords]);
+            }
         }
-
-
-        return globalResults;
+        selectedFreqArr = selectedFreqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
+        return array;
     }
 }
 
