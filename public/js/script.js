@@ -7,7 +7,7 @@ const searchButton = document.getElementById("search-button");
 function showData() {
     content.innerHTML = "";
     wordbars.innerHTML = "";
-    results, frequency = getResults([])
+    [results, frequency] = getResults([])
 
     results.forEach(element => {
         content.innerHTML += JSON.stringify(element) + "<br/>";
@@ -316,13 +316,11 @@ testButton.onclick = async function () {
 // BACKEND STARTS HERE
 // BELOW ARE template methods
 var globalResults = [];
-var totalFrequency = new Map();
 
 function clearResults() {
     // simply set your global array = []
     // nothing to return
     globalResults = [];
-    totalFrequency = new Map();
 }
 
 
@@ -368,11 +366,12 @@ function getResults(selectedWords) {
                 localFrequency.set(key,value);
             }
         })
+        const freqArr = [];
+        for (let [key, value] of localFrequency.entries()) {
+            freqArr.push([key, value]);
+        }
 
-        totalFrequency = localFrequency;
-            
-        
-        return globalResults;
+        return [globalResults, freqArr];
     }
     else {
         // return a new sorted result with top 20
@@ -390,12 +389,7 @@ function getFrequencyArray() {
     // this part is tricy but only takes a few lines
     // just search "javascript dictionary sort" and there are a bunch of answers
     // the format should be [[word1, wordFrequency1], [word2, wordFrequency2], ...]
-    const arr = [];
-    for (let [key, value] of totalFrequency.entries()) {
-        arr.push([key, value]);
-    }
-
-    return arr;
+    
 }
 
 
