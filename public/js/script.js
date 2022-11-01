@@ -6,16 +6,15 @@ const searchButton = document.getElementById("search-button");
 
 function showData() {
     content.innerHTML = "";
-    getResults([]).forEach(element => {
+    wordbars.innerHTML = "";
+    results, frequency = getResults([])
+
+    results.forEach(element => {
         content.innerHTML += JSON.stringify(element) + "<br/>";
     });
-}
-
-function showFrequency() {
-    wordbars.innerHTML = "";
-    getFrequencyArray().forEach(element => {
+    frequency.forEach(element => {
         wordbars.innerHTML += element[0] + ": " + element[1] + "<br/>";
-    });
+    })
 }
 
 searchButton.onclick = async function () {
