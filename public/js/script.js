@@ -425,15 +425,22 @@ function remove_common_words(results) {
     return results;
 }
 
-function getLocalFrequencyTable(results){
+async function getLocalFrequencyTable(results) {
     let frequencyTable = new Map();
-    let resultsSplit = results.split(" ");
-    resultsSplit.forEach(element => {
-        if(frequencyTable.has(element)){
-            frequencyTable.set(element, frequencyTable.get(element)+1);
+    
+    await fetch("/stem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json"},
+        body: JSON.stringify({"data": results})
+    })
+    .then(response => response.json())
+    .then(data => data.forEach(element => {
+        if (frequencyTable.has(element)) {
+            frequencyTable.set(element, frequencyTable.get(element) + 1);
             return;
         }
-        frequencyTable.set(element,1);
-    });
+        frequencyTable.set(element, 1);
+    }))
+    // console.log(frequencyTable)
     return frequencyTable;
 }

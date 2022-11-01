@@ -10,13 +10,15 @@ app.get("/", function (req, res) {
     res.sendFile(__dirname + "/index.html");
 });
 
-app.post("/*", function (req, res) {
-    // fetch results from Bing
-    return https.get({
-        hostname: "api.bing.microsoft.com",
-        path: "/v7.0/search?q=" + req.url.slice(1),
-        headers: { "Ocp-Apim-Subscription-Key": "68dc5cf46ecc419688a1066dd7b2b9d5" },
-    });
+app.post("/stem", function (req, res) {
+    var tokenizer = new natural.WordTokenizer(); 
+    let tokens = tokenizer.tokenize(req.body["data"])
+    let arr = [];
+    for (s of tokens) {
+        arr.push(natural.PorterStemmer.stem(s))
+    }
+    res.send(arr);
+    // res.send([natural.PorterStemmer.stem(tokens)]);
 });
 
 const port = 3030;
