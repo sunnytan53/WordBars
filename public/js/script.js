@@ -10,7 +10,7 @@ function showData() {
     [results, frequency] = getResults([])
 
     results.forEach(element => {
-        content.innerHTML += JSON.stringify(element) + "<br/>";
+        content.innerHTML += element["title"] + "<br/>" + element["snippet"] + "<br/>" + element["url"] + "<br/>";
     });
     frequency.forEach(element => {
         wordbars.innerHTML += element[0] + ": " + element[1] + "<br/>";
