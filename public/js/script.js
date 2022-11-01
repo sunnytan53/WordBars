@@ -7,7 +7,7 @@ const searchButton = document.getElementById("search-button");
 function showData() {
     content.innerHTML = "";
     wordbars.innerHTML = "";
-    [results, frequency] = getResults([])
+    let [results, frequency] = getResults([])
 
     results.forEach(element => {
         content.innerHTML += element["title"] + "<br/>" + element["snippet"] + "<br/>" + element["url"] + "<br/>";
@@ -19,7 +19,7 @@ function showData() {
 
 searchButton.onclick = async function () {
     // alert empty query and return with no other actions
-    query = searchBox.value;
+    let query = searchBox.value;
     if (!query) {
         alert("Query (Search Box) can NOT be empty!");
         return;
@@ -32,14 +32,14 @@ searchButton.onclick = async function () {
 
     // fetch max allowed amount of results
     // based on API Doc, this amount is 50, but after test, it is only 20
-    await fetch("https://api.bing.microsoft.com/v7.0/search?count=50&q=" + query,
+    let fetched = await fetch("https://api.bing.microsoft.com/v7.0/search?count=50&q=" + query,
         { headers: { "Ocp-Apim-Subscription-Key": "68dc5cf46ecc419688a1066dd7b2b9d5" } })
         .then(response => response.json())
-        .then(data => {
-            data["webPages"]["value"].forEach(element => {
-                addResult(element["name"], element["snippet"], element["url"]);
-            });
-        });
+        .then(data => data["webPages"]["value"]);
+
+    for (let result of fetched) {
+        await addResult(result["name"], result["snippet"], result["url"]);
+    }
 
     showData();
 };
@@ -62,7 +62,7 @@ testButton.onclick = async function () {
 
     // fetch max allowed amount of results
     // based on API Doc, this amount is 50, but after test, it is only 20
-    fake = [
+    let fake = [
         {
             "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0",
             "contractualRules": [
@@ -302,9 +302,9 @@ testButton.onclick = async function () {
         }
     ];
 
-    fake.forEach(element => {
-        addResult(element["name"], element["snippet"], element["url"]);
-    });
+    for (let result of fake) {
+        await addResult(result["name"], result["snippet"], result["url"]);
+    }
 
     showData();
 };
@@ -323,24 +323,15 @@ function clearResults() {
 }
 
 
-function addResult(title, snippet, url) {
-    //console.log(results);
-
-    // The three keys corresponding to the values we need to store
-    // this is a subject to change, but right now these are what we need
-    
-    // This function is aiming to store necessary data, (e.g. hashmap)
-    // you can rename the keys if you want since you are backend!\
-    // preprocess save the frequency table into EACH single result
-    // and add it to the global array
+async function addResult(title, snippet, url) {
     let results = title+ " " + snippet;
-    results = remove_common_words(results);
+    // results = remove_common_words(results);
     // nothing to return
     globalResults.push({
         "title": title,
         "snippet": snippet,
         "url": url,
-        "frequency": getLocalFrequencyTable(results)
+        "frequency": await getLocalFrequencyTable(results)
     });
 }
 
@@ -353,7 +344,7 @@ function getResults(selectedWords) {
     // Potential BUG:
     // the results length may not be >= 20
     // so please check it first before you use 20 as a fixed length
-
+    
     if (selectedWords.length == 0) {
         let localFrequency = new Map();
         globalResults.forEach(result => {
@@ -407,23 +398,23 @@ function getResults(selectedWords) {
 }
 
 
-function remove_common_words(results) {
-    // you get a json object
-    //let whole_str = result["title"] + result["snippet"];
-    var uselessWordsArray = 
-        [
-          "a", "at", "be", "can", "cant", "could", "couldnt", 
-          "do", "does", "how", "i", "in", "is", "many", "much", "of", 
-          "on", "or", "should", "shouldnt", "so", "such", "the", 
-          "them", "they", "to", "us",  "we", "what", "who", "why", 
-          "with", "wont", "would", "wouldnt", "you"
-        ];
-    results = ' ' + results + ' ';
-    results = results.toLowerCase().replace(/\s+/g, ' ').trim();    
-	results = results.replace(/[^a-zA-Z0-9 ]/g, '');
-    results.replace(uselessWordsArray, '');
-    return results;
-}
+// function remove_common_words(results) {
+//     // you get a json object
+//     //let whole_str = result["title"] + result["snippet"];
+//     var uselessWordsArray = 
+//         [
+//           "a", "at", "be", "can", "cant", "could", "couldnt", 
+//           "do", "does", "how", "i", "in", "is", "many", "much", "of", 
+//           "on", "or", "should", "shouldnt", "so", "such", "the", 
+//           "them", "they", "to", "us",  "we", "what", "who", "why", 
+//           "with", "wont", "would", "wouldnt", "you"
+//         ];
+//     results = ' ' + results + ' ';
+//     results = results.toLowerCase().replace(/\s+/g, ' ').trim();    
+// 	results = results.replace(/[^a-zA-Z0-9 ]/g, '');
+//     results.replace(uselessWordsArray, '');
+//     return results;
+// }
 
 async function getLocalFrequencyTable(results) {
     let frequencyTable = new Map();
@@ -434,13 +425,15 @@ async function getLocalFrequencyTable(results) {
         body: JSON.stringify({"data": results})
     })
     .then(response => response.json())
-    .then(data => data.forEach(element => {
-        if (frequencyTable.has(element)) {
-            frequencyTable.set(element, frequencyTable.get(element) + 1);
-            return;
-        }
-        frequencyTable.set(element, 1);
-    }))
-    // console.log(frequencyTable)
+    .then(data =>
+        data.forEach(element => {
+            if (frequencyTable.has(element)) {
+                frequencyTable.set(element, frequencyTable.get(element) + 1);
+            }
+            else {
+                frequencyTable.set(element, 1);
+            }
+    }));
+
     return frequencyTable;
 }
