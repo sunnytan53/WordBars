@@ -307,7 +307,6 @@ testButton.onclick = async function () {
     });
 
     showData();
-    showFrequency();
 };
 
 
@@ -367,11 +366,13 @@ function getResults(selectedWords) {
                 }
             }
         })
-        const freqArr = [];
+        let freqArr = [];
         for (let [key, value] of localFrequency.entries()) {
             freqArr.push([key, value]);
         }
-        // freqArr = freqArr.sort((f1, f2) => (f1[frequency] < p2[frequency]) ? 1 : (p[frequency] > p2[frequency]) ? -1 : 0);
+        // console.log(freqArr);
+        freqArr = freqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
+        console.log(freqArr);
         return [globalResults, freqArr];
     }
     else {
@@ -399,9 +400,6 @@ function getResults(selectedWords) {
     }
 }
 
-function sortFrequency(){
-
-}
 
 function remove_common_words(results) {
     // you get a json object
