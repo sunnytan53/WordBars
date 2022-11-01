@@ -360,10 +360,33 @@ function getResults(selectedWords) {
         globalResults.forEach(result => {
             for (let [key, value] of  result["frequency"].entries()) {
                 if(localFrequency.has(key)){
-                    localFrequency.set(key, localFrequency.get(key)+value);
-                    return;
+                    localFrequency.set(key, localFrequency.get(key) + value);
                 }
-                localFrequency.set(key,value);
+                else {
+                    localFrequency.set(key,value);
+                }
+            }
+        })
+        const freqArr = [];
+        for (let [key, value] of localFrequency.entries()) {
+            freqArr.push([key, value]);
+        }
+        // freqArr = freqArr.sort((f1, f2) => (f1[frequency] < p2[frequency]) ? 1 : (p[frequency] > p2[frequency]) ? -1 : 0);
+        return [globalResults, freqArr];
+    }
+    else {
+        // return a new sorted result with top 20
+        // call your sorting method, or consturct them here
+        // NOTE: do NOT modify globall result, this is a new result
+        // find the documents that has the selected words
+        let localFrequency = new Map();
+        const array = [];
+        globalResults.forEach(result => {
+            for(let word of selectedWords){
+                if (result["frequency"].has(word)) {
+                    array.push(result);
+                    break;
+                }
             }
         })
         const freqArr = [];
@@ -371,28 +394,14 @@ function getResults(selectedWords) {
             freqArr.push([key, value]);
         }
 
-        return [globalResults, freqArr];
-    }
-    else {
-        // return a new sorted result with top 20
-        // call your sorting method, or consturct them here
-        // NOTE: do NOT modify globall result, this is a new result
-
-
 
         return globalResults;
     }
 }
 
-function getFrequencyArray() {
-    // you should return frequency in sorted array!!!
-    // this part is tricy but only takes a few lines
-    // just search "javascript dictionary sort" and there are a bunch of answers
-    // the format should be [[word1, wordFrequency1], [word2, wordFrequency2], ...]
-    
+function sortFrequency(){
+
 }
-
-
 
 function remove_common_words(results) {
     // you get a json object
