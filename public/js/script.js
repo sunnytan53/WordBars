@@ -12,7 +12,7 @@ function showData() {
 }
 
 function showFrequency() {
-    // wordbars.innerHTML = "";
+    wordbars.innerHTML = "";
     getFrequencyArray().forEach(element => {
         wordbars.innerHTML += element[0] + ": " + element[1] + "<br/>";
     });
@@ -308,6 +308,7 @@ testButton.onclick = async function () {
     });
 
     showData();
+    showFrequency();
 };
 
 
@@ -315,12 +316,14 @@ testButton.onclick = async function () {
 
 // BACKEND STARTS HERE
 // BELOW ARE template methods
-var globalResults = []
+var globalResults = [];
+var totalFrequency = new Map();
 
 function clearResults() {
     // simply set your global array = []
     // nothing to return
-    globalResults = []
+    globalResults = [];
+    totalFrequency = new Map();
 }
 
 
@@ -356,13 +359,29 @@ function getResults(selectedWords) {
     // so please check it first before you use 20 as a fixed length
 
     if (selectedWords.length == 0) {
-        // return top 20 results of original order of results
+        let localFrequency = new Map();
+        globalResults.forEach(result => {
+            for (let [key, value] of  result["frequency"].entries()) {
+                if(localFrequency.has(key)){
+                    localFrequency.set(key, localFrequency.get(key)+value);
+                    return;
+                }
+                localFrequency.set(key,value);
+            }
+        })
+
+        totalFrequency = localFrequency;
+            
+        
         return globalResults;
     }
     else {
         // return a new sorted result with top 20
         // call your sorting method, or consturct them here
         // NOTE: do NOT modify globall result, this is a new result
+
+
+
         return globalResults;
     }
 }
@@ -372,7 +391,14 @@ function getFrequencyArray() {
     // this part is tricy but only takes a few lines
     // just search "javascript dictionary sort" and there are a bunch of answers
     // the format should be [[word1, wordFrequency1], [word2, wordFrequency2], ...]
+    const arr = [];
+    for (let [key, value] of totalFrequency.entries()) {
+        arr.push([key, value]);
+    }
+
+    return arr;
 }
+
 
 
 function remove_common_words(results) {
@@ -403,9 +429,5 @@ function getLocalFrequencyTable(results){
         }
         frequencyTable.set(element,1);
     });
-    /*
-    for (let [key, value] of  frequency.entries()) {
-        console.log(key + " = " + value)
-    }*/
     return frequencyTable;
 }
