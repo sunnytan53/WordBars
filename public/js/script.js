@@ -331,7 +331,8 @@ async function addResult(title, snippet, url) {
         "title": title,
         "snippet": snippet,
         "url": url,
-        "frequency": await getLocalFrequencyTable(results)
+        "frequency": await getLocalFrequencyTable(results),
+        "original": remove_common_words(title +" "+ snippet).split(" ")
     });
 }
 
@@ -398,23 +399,23 @@ function getResults(selectedWords) {
 }
 
 
-// function remove_common_words(results) {
-//     // you get a json object
-//     //let whole_str = result["title"] + result["snippet"];
-//     var uselessWordsArray = 
-//         [
-//           "a", "at", "be", "can", "cant", "could", "couldnt", 
-//           "do", "does", "how", "i", "in", "is", "many", "much", "of", 
-//           "on", "or", "should", "shouldnt", "so", "such", "the", 
-//           "them", "they", "to", "us",  "we", "what", "who", "why", 
-//           "with", "wont", "would", "wouldnt", "you"
-//         ];
-//     results = ' ' + results + ' ';
-//     results = results.toLowerCase().replace(/\s+/g, ' ').trim();    
-// 	results = results.replace(/[^a-zA-Z0-9 ]/g, '');
-//     results.replace(uselessWordsArray, '');
-//     return results;
-// }
+function remove_common_words(results) {
+    // you get a json object
+    //let whole_str = result["title"] + result["snippet"];
+    var uselessWordsArray = 
+        [
+          "a", "at", "be", "can", "cant", "could", "couldnt", 
+          "do", "does", "how", "i", "in", "is", "many", "much", "of", 
+          "on", "or", "should", "shouldnt", "so", "such", "the", 
+          "them", "they", "to", "us",  "we", "what", "who", "why", 
+          "with", "wont", "would", "wouldnt", "you"
+        ];
+    results = ' ' + results + ' ';
+    results = results.toLowerCase().replace(/\s+/g, ' ').trim();    
+	results = results.replace(/[^a-zA-Z0-9 ]/g, '');
+    results.replace(uselessWordsArray, '');
+    return results;
+}
 
 async function getLocalFrequencyTable(results) {
     let frequencyTable = new Map();
