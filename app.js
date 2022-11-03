@@ -3,6 +3,10 @@ const { removeStopwords } = require("stopword");
 const express = require("express");
 const app = express();
 
+// let stemmer = require('porter-stemmer').stemmer
+// console.log(stemmer('comput'));
+// console.log(natural.PorterStemmer.stem("comput"));
+
 app.use(express.json());
 
 app.use("/public", express.static("public"));

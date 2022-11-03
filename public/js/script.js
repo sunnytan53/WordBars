@@ -438,3 +438,25 @@ async function getLocalFrequencyTable(results) {
 
     return frequencyTable;
 }
+
+//Copy globalResults,
+//Push each result that contains the selected words into a tuple
+//Sort the tuple list
+function getResultsBySelectedWords(globalResults,selectedWords){ 
+   let resultList = JSON.parse(JSON.stringify(globalResults));
+   //tuples [result, sum]
+   let resultsContainingSelectedWords = {};
+   resultList.forEach(element => {
+    let sum = 0;
+    for(let word in selectedWords){
+        for(let tupleWord in element.frequency){
+            if(tupleWord[0] == word){
+                sum =+ tupleWord[1];
+            }
+        }
+        resultsContainingSelectedWords.push([element,sum]);
+    }
+   });
+   //sort array
+   resultsContainingSelectedWords = resultsContainingSelectedWords.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
+}
