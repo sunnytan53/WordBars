@@ -20,15 +20,16 @@ function showData() {
 
     html_str = ""
     frequency.forEach((element, index) => {
-        html_str += `<div onclick="clickWordBars(${index})">${element[0]}: ${element[1]}</div>`
+        html_str += `<div onclick="clickWordBars(${index})">${getDisplay(element[0])}: ${element[1]}</div>`
     })
     wordbars.innerHTML = html_str;
 }
 
 function clickWordBars(index) {
     word = pageFrequency[index][0]
-    selection.innerHTML += `<div onclick="clickSelection(${selection.length})">${word}</div>`;
+    selection.innerHTML += `<div onclick="clickSelection(${selection.length})">${getDisplay(word)}</div>`;
     selecetedWords.push(word);
+
     showData();
 }
 
@@ -37,9 +38,11 @@ function clickSelection(index) {
 
     html_str = "";
     selecetedWords.forEach((element, index) => {
-        html_str += `<div onclick="clickSelection(${index})">${element}</div>`
+        html_str += `<div onclick="clickSelection(${index})">${getDisplay(element)}</div>`
     })
     selection.innerHTML = html_str;
+
+    showData();
 }
 
 searchButton.onclick = async function () {
@@ -197,16 +200,21 @@ testButton.onclick = async function () {
     showData();
 };
 
+function getDisplay(stemmedWord) {
+    console.log(stemmedWord)
+    return globalStems[stemmedWord].values().next().value;
+}
+
 
 
 
 // BACKEND
 var globalResults = [];
+var globalStems = {}; // key: stemmed word, value: list of all originals (set)
 
 function clearResults() {
-    // simply set your global array = []
-    // nothing to return
     globalResults = [];
+    globalStems = {};
 }
 
 
@@ -214,15 +222,23 @@ async function addResult(title, snippet, url) {
     let [original, stemmed] = await fetch("/stem", {
         method: "POST",
         headers: { "Content-Type": "application/json"},
-        body: JSON.stringify({"data": (title + " " + snippet).replace(/[0-9]/g, "")})
+        body: JSON.stringify({"data": (title + " " + snippet)
+                                        .replace(/[0-9]/g, "")
+                                        .toLowerCase()})
     })
     .then(response => response.json());
+
+    for (let i = 0; i < stemmed.length; i++) {
+        if (!(stemmed[i] in globalStems)) {
+            globalStems[stemmed[i]] = new Set();
+        }
+        globalStems[stemmed[i]].add(original[i]);
+    }
 
     globalResults.push({
         "title": title,
         "snippet": snippet,
         "url": url,
-        "original": original,
         "frequency": getLocalFrequencyTable(stemmed),
     });
 }

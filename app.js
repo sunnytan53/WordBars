@@ -14,7 +14,9 @@ app.get("/", function (req, res) {
 var tokenizer = new natural.WordTokenizer();
 app.post("/stem", function (req, res) {
     let stemmed = [];
-    let tokens = removeStopwords(tokenizer.tokenize(req.body["data"]));
+    let tokens = removeStopwords(
+        tokenizer.tokenize(req.body["data"])
+        .filter(element => element.length > 2));
     for (s of tokens) {
         stemmed.push(natural.PorterStemmer.stem(s));
     }
