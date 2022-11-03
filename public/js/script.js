@@ -1,20 +1,47 @@
-// global variables
+// FRONTEND - Sunny
+
+
 const content = document.getElementById("content");
 const wordbars = document.getElementById("word-bars");
 const searchBox = document.getElementById("search-box");
 const searchButton = document.getElementById("search-button");
+const selection = document.getElementById("selection");
+
+var selecetedWords = [];
+var pageFrequency = [];
 
 function showData() {
-    content.innerHTML = "";
-    wordbars.innerHTML = "";
-    let [results, frequency] = getResults([])
+    let [results, frequency] = getResults(selecetedWords);
+    pageFrequency = frequency;
 
+    html_str = ""
     results.forEach(element => {
-        content.innerHTML += element["title"] + "<br/>" + element["snippet"] + "<br/>" + element["url"] + "<br/>";
+        html_str += `<div>${element["title"]}<br/>${element["snippet"]}<br/>${element["url"]}<br/></div><br/>`
     });
-    frequency.forEach(element => {
-        wordbars.innerHTML += element[0] + ": " + element[1] + "<br/>";
+    content.innerHTML = html_str;
+
+    html_str = ""
+    frequency.forEach((element, index) => {
+        html_str += `<div onclick="clickWordBars(${index})">${element[0]}: ${element[1]}</div>`
     })
+    wordbars.innerHTML = html_str;
+}
+
+function clickWordBars(index) {
+    word = pageFrequency[index][0]
+    selection.innerHTML += `<div onclick="clickSelection(${selection.length})">${word}</div>`;
+    selecetedWords.push(word);
+    showData();
+}
+
+function clickSelection(index) {
+    selecetedWords.splice(index, 1);
+
+    html_str = "";
+    selecetedWords.forEach((element, index) => {
+        html_str += `<div onclick="clickSelection(${index})">${element}</div>`
+    })
+    selection.innerHTML = html_str;
 }
 
 searchButton.onclick = async function () {
@@ -337,15 +364,6 @@ async function addResult(title, snippet, url) {
 }
 
 function getResults(selectedWords) {
-    // selectedWords are corresponding to WordBars, which is a list
-    // HOWEVER, if I pass in empty array [], that means no selection
-    // return the original order of results, 
-    // this is also the first thing you will test
-
-    // Potential BUG:
-    // the results length may not be >= 20
-    // so please check it first before you use 20 as a fixed length
-    
     if (selectedWords.length == 0) {
         let localFrequency = new Map();
         globalResults.forEach(result => {
@@ -394,7 +412,7 @@ function getResults(selectedWords) {
             }
         }
         selectedFreqArr = selectedFreqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
-        return array;
+        return [array, selectedFreqArr];
     }
 }
 
