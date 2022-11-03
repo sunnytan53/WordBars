@@ -23,13 +23,13 @@ function showData() {
     let [results, frequency] = getResults(selecetedWords);
     pageFrequency = frequency;
 
-    html_str = ""
+    html_str = ""  // do NOT add up on innerHTML (can cause lag)
     results.forEach(element => {
         html_str += `<div>${element["title"]}<br/>${element["snippet"]}<br/>${element["url"]}<br/></div><br/>`
     });
     content.innerHTML = html_str;
 
-    html_str = ""
+    html_str = ""  // do NOT add up on innerHTML (can cause lag)
     frequency.forEach((element, index) => {
         html_str += `<div onclick="clickWordBars(${index})">${globalOriginals[element[0]][0]}: ${element[1]}</div>`
     })
@@ -84,7 +84,7 @@ searchButton.onclick = async function () {
             "url": result["url"],
         });
     }
-    
+
     await processResults()
 
     showData();
@@ -117,7 +117,7 @@ async function processResults() {
     // send them all at once to save resource (frontend-Sunny)
     let fetched = await fetch("/stem", {
         method: "POST",
-        headers: { "Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(strs)
     }).then(response => response.json())
 
@@ -148,7 +148,7 @@ async function processResults() {
     for (key in globalOriginals) {
         globalOriginals[key] = [...globalOriginals[key]];
     }
-    
+
 }
 
 
@@ -165,11 +165,11 @@ function getResults(selectedWords) {
         let localFrequency = new Map();
         globalResults.forEach(result => {
             for (let [key, value] of result["frequency"].entries()) {
-                if(localFrequency.has(key)){
+                if (localFrequency.has(key)) {
                     localFrequency.set(key, localFrequency.get(key) + value);
                 }
                 else {
-                    localFrequency.set(key,value);
+                    localFrequency.set(key, value);
                 }
             }
         })
@@ -189,7 +189,7 @@ function getResults(selectedWords) {
         let localFrequency = new Map();
         const array = [];
         globalResults.forEach(result => {
-            for(let word of selectedWords){
+            for (let word of selectedWords) {
                 count = 0;
                 if (result["frequency"].has(word)) {
                     count += 1;
@@ -202,10 +202,10 @@ function getResults(selectedWords) {
         selectedFreqArr = []; // [[result, allValuesOfSelectedWords]]
         for (result of array) {
             allValuesOfSelectedWords = 0;
-            for (select of selectedWords){
+            for (select of selectedWords) {
                 // add to all values
-                allValuesOfSelectedWords += result["frequency"][select]; 
-                selectedFreqArr.push([result,allValuesOfSelectedWords]);
+                allValuesOfSelectedWords += result["frequency"][select];
+                selectedFreqArr.push([result, allValuesOfSelectedWords]);
             }
         }
         selectedFreqArr = selectedFreqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
@@ -216,24 +216,24 @@ function getResults(selectedWords) {
 //Copy globalResults,
 //Push each result that contains the selected words into a tuple
 //Sort the tuple list
-function getResultsBySelectedWords(globalResults,selectedWords){ 
+function getResultsBySelectedWords(globalResults, selectedWords) {
     let resultList = JSON.parse(JSON.stringify(globalResults));
     //tuples [result, sum]
     let resultsContainingSelectedWords = {};
     resultList.forEach(element => {
-     let sum = 0;
-     for(let word in selectedWords){
-         for(let tupleWord of element.frequency){
-             if(tupleWord[0] == word){
-                 sum =+ tupleWord[1];
-             }
-         }
-         resultsContainingSelectedWords.push([element,sum]);
-     }
+        let sum = 0;
+        for (let word in selectedWords) {
+            for (let tupleWord of element.frequency) {
+                if (tupleWord[0] == word) {
+                    sum = + tupleWord[1];
+                }
+            }
+            resultsContainingSelectedWords.push([element, sum]);
+        }
     });
     //sort array
     resultsContainingSelectedWords = resultsContainingSelectedWords.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
- }
+}
 
 // ### Integrated into processResults() for server side
 // async function addResult(title, snippet, url) {
