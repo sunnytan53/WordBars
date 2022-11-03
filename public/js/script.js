@@ -449,7 +449,7 @@ function getResultsBySelectedWords(globalResults,selectedWords){
    resultList.forEach(element => {
     let sum = 0;
     for(let word in selectedWords){
-        for(let tupleWord in element.frequency){
+        for(let tupleWord of element.frequency){
             if(tupleWord[0] == word){
                 sum =+ tupleWord[1];
             }
