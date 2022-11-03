@@ -8,7 +8,7 @@ const selection = document.getElementById("selection");
 var fetchFake = false;
 var selecetedWords = [];
 var pageFrequency = [];
-var globalDisplay = {};
+var frequencylDisplay = {};
 
 function showData() {
     let [results, frequency] = getResults(selecetedWords);
@@ -22,14 +22,14 @@ function showData() {
 
     html_str = ""
     frequency.forEach((element, index) => {
-        html_str += `<div onclick="clickWordBars(${index})">${getDisplay(element[0])}: ${element[1]}</div>`
+        html_str += `<div onclick="clickWordBars(${index})">${frequencylDisplay[element[0]]}: ${element[1]}</div>`
     })
     wordbars.innerHTML = html_str;
 }
 
 function clickWordBars(index) {
     word = pageFrequency[index][0]
-    selection.innerHTML += `<div onclick="clickSelection(${selection.length})">${getDisplay(word)}</div>`;
+    selection.innerHTML += `<div onclick="clickSelection(${selection.length})">${frequencylDisplay[word]}</div>`;
     selecetedWords.push(word);
 
     showData();
@@ -40,7 +40,7 @@ function clickSelection(index) {
 
     html_str = "";
     selecetedWords.forEach((element, index) => {
-        html_str += `<div onclick="clickSelection(${index})">${getDisplay(element)}</div>`
+        html_str += `<div onclick="clickSelection(${index})">${frequencylDisplay[element]}</div>`
     })
     selection.innerHTML = html_str;
 
@@ -72,6 +72,10 @@ searchButton.onclick = async function () {
         await addResult(result["name"], result["snippet"], result["url"]);
     }
 
+    for (let key in globalStems) {
+        frequencylDisplay[key] = [...globalStems[key]][0];
+    }
+    
     showData();
 };
 
@@ -92,9 +96,6 @@ testButton.onclick = async function () {
     fetchFake = false;
 };
 
-function getDisplay(stemmedWord) {
-    return globalStems[stemmedWord].values().next().value;
-}
 
 
 
