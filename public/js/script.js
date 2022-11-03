@@ -9,14 +9,15 @@ var fetchFake = false;
 
 var selecetedWords = [];
 var pageFrequency = [];
-var globalOriginals = {};
+var allOriginals = {};
 
 function clearFrontend() {
     content.innerHTML = "<h2>Fetching Results From Bing</h2>";
     wordbars.innerHTML = "";
+    selection.innerHTML = ""
     selecetedWords = [];
     // pageFrequency = [];  // it is directly reassign, see below
-    globalOriginals = {};
+    allOriginals = {};
 }
 
 function showData() {
@@ -24,21 +25,21 @@ function showData() {
     pageFrequency = frequency;
 
     html_str = ""  // do NOT add up on innerHTML (can cause lag)
-    results.forEach(element => {
-        html_str += `<div>${element["title"]}<br/>${element["snippet"]}<br/>${element["url"]}<br/></div><br/>`
+    results.forEach(rs => {
+        html_str += `<div>${rs["title"]}<br/>${rs["snippet"]}<br/>${rs["url"]}<br/></div><br/>`
     });
     content.innerHTML = html_str;
 
     html_str = ""  // do NOT add up on innerHTML (can cause lag)
-    frequency.forEach((element, index) => {
-        html_str += `<div onclick="clickWordBars(${index})">${globalOriginals[element[0]][0]}: ${element[1]}</div>`
+    frequency.forEach((freq, index) => {
+        html_str += `<div onclick="clickWordBars(${index})">${allOriginals[freq[0]][0]}: ${freq[1]}</div>`
     })
     wordbars.innerHTML = html_str;
 }
 
 function clickWordBars(index) {
     word = pageFrequency[index][0]
-    selection.innerHTML += `<span onclick="clickSelection(${selecetedWords.length})">${globalOriginals[word][0]}</span>`;
+    selection.innerHTML += `<span onclick="clickSelection(${selecetedWords.length})">${allOriginals[word][0]}</span>`;
     selecetedWords.push(word);
 
     showData();
@@ -48,8 +49,8 @@ function clickSelection(index) {
     selecetedWords.splice(index, 1);
 
     html_str = "";
-    selecetedWords.forEach((element, index) => {
-        html_str += `<span onclick="clickSelection(${index})">${globalOriginals[element][0]}</span>`
+    selecetedWords.forEach((word, index) => {
+        html_str += `<span onclick="clickSelection(${index})">${allOriginals[word][0]}</span>`
     })
     selection.innerHTML = html_str;
 
@@ -134,10 +135,10 @@ async function processResults() {
             }
 
             // store originals respected to all results (frontend-Sunny)
-            if (!(stem in globalOriginals)) {
-                globalOriginals[stem] = new Set();
+            if (!(stem in allOriginals)) {
+                allOriginals[stem] = new Set();
             }
-            globalOriginals[stem].add(orig);
+            allOriginals[stem].add(orig);
         }
 
         // store frequency table for each result (backend-Japheth)
@@ -145,8 +146,8 @@ async function processResults() {
     }
 
     // convert all set to list for better access and manipulation (frontend-Sunny)
-    for (key in globalOriginals) {
-        globalOriginals[key] = [...globalOriginals[key]];
+    for (key in allOriginals) {
+        allOriginals[key] = [...allOriginals[key]];
     }
 
 }
