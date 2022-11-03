@@ -1,6 +1,4 @@
-// FRONTEND - Sunny
-
-
+// FRONTEND
 const content = document.getElementById("content");
 const wordbars = document.getElementById("word-bars");
 const searchBox = document.getElementById("search-box");
@@ -351,15 +349,19 @@ function clearResults() {
 
 
 async function addResult(title, snippet, url) {
-    let results = title+ " " + snippet;
-    // results = remove_common_words(results);
-    // nothing to return
+    let [original, stemmed] = await fetch("/stem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json"},
+        body: JSON.stringify({"data": (title + " " + snippet).replace(/[0-9]/g, "")})
+    })
+    .then(response => response.json());
+
     globalResults.push({
         "title": title,
         "snippet": snippet,
         "url": url,
-        "frequency": await getLocalFrequencyTable(results),
-        "original": remove_common_words(title +" "+ snippet).split(" ")
+        "original": original,
+        "frequency": getLocalFrequencyTable(stemmed),
     });
 }
 
@@ -416,7 +418,7 @@ function getResults(selectedWords) {
     }
 }
 
-
+// not needed, already done in app.js
 function remove_common_words(results) {
     // you get a json object
     //let whole_str = result["title"] + result["snippet"];
@@ -435,25 +437,18 @@ function remove_common_words(results) {
     return results;
 }
 
-async function getLocalFrequencyTable(results) {
+function getLocalFrequencyTable(data) {
     let frequencyTable = new Map();
-    
-    await fetch("/stem", {
-        method: "POST",
-        headers: { "Content-Type": "application/json"},
-        body: JSON.stringify({"data": results})
-    })
-    .then(response => response.json())
-    .then(data =>
-        data.forEach(element => {
-            if (frequencyTable.has(element)) {
-                frequencyTable.set(element, frequencyTable.get(element) + 1);
-            }
-            else {
-                frequencyTable.set(element, 1);
-            }
-    }));
 
+    data.forEach(element => {
+        if (frequencyTable.has(element)) {
+            frequencyTable.set(element, frequencyTable.get(element) + 1);
+        }
+        else {
+            frequencyTable.set(element, 1);
+        }
+    })
+    
     return frequencyTable;
 }
 

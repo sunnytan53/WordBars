@@ -17,11 +17,12 @@ app.get("/", function (req, res) {
 
 var tokenizer = new natural.WordTokenizer();
 app.post("/stem", function (req, res) {
-    let arr = [];
-    for (s of removeStopwords(tokenizer.tokenize(req.body["data"]))) {
-        arr.push(natural.PorterStemmer.stem(s));
+    let stemmed = [];
+    let tokens = removeStopwords(tokenizer.tokenize(req.body["data"]));
+    for (s of tokens) {
+        stemmed.push(natural.PorterStemmer.stem(s));
     }
-    res.send(arr);
+    res.send([tokens, stemmed]);
 });
 
 const port = 3030;
