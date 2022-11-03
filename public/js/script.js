@@ -201,7 +201,6 @@ testButton.onclick = async function () {
 };
 
 function getDisplay(stemmedWord) {
-    console.log(stemmedWord)
     return globalStems[stemmedWord].values().next().value;
 }
 
