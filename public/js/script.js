@@ -7,7 +7,7 @@ const selection = document.getElementById("selection");
 
 var fetchFake = false;
 
-var selecetedWords = [];
+var selectedWords = [];
 var selectedValues = [];
 var pageFrequency = [];
 var allOriginals = {};
@@ -17,7 +17,7 @@ function clearFrontend() {
     content.innerHTML = "<h2>Fetching Results From Bing</h2>";
     wordbars.innerHTML = "";
     selection.innerHTML = ""
-    selecetedWords = [];
+    selectedWords = [];
     selectedValues = [];
     // pageFrequency = [];  // it is directly reassign, see below
     allOriginals = {};
@@ -25,7 +25,7 @@ function clearFrontend() {
 }
 
 async function showData() {
-    let [results, frequency] = getResults(selecetedWords);
+    let [results, frequency] = getResults(selectedWords);
     pageFrequency = frequency.slice(0, 40);  // based on first reference, 40 is a good amount
 
     // *** it is important to cache synonyms for each search since it takes some time
@@ -99,7 +99,7 @@ async function clickWordNet(index, tense, synonymIndex) {
     selectedValues.push(values);
 
     if (tense == "") {
-        word = pageFrequency[index][0];
+        word = [pageFrequency[index][0]];
         str = allOriginals[word][0];
     }
     else{
@@ -109,19 +109,21 @@ async function clickWordNet(index, tense, synonymIndex) {
     }
 
     content.innerHTML = "If nothing shows up, check if <h3>clickWordNet()</h3> has showData() enable, else it has a bug"
-    selection.innerHTML += `<button onclick="clickSelection(${selecetedWords.length})">${str}</button>`;
-    selecetedWords.push(word);
+    selection.innerHTML += `<button onclick="clickSelection(${selectedWords.length})">${str}</button>`;
+    selectedWords.push(word);
 
     // await showData();
+    console.log(selectedWords);
 }
 
 async function clickSelection(index) {
     content.innerHTML = "If nothing shows up, check if <h3>clickSelection()</h3> has showData() enable, else it has a bug"
-    selecetedWords.splice(index, 1);
+    selectedWords.splice(index, 1);
     selectedValues.splice(index, 1);
     selection.removeChild(selection.children[index])
 
     // await showData();
+    console.log(selectedWords);
 }
 
 searchButton.onclick = async function () {
@@ -229,7 +231,6 @@ function clearBackend() {
 }
 
 function getResults(selectedWords) {
-    console.log(selectedWords);
     if (selectedWords.length == 0) {
         let localFrequency = new Map();
         globalResults.forEach(result => {
