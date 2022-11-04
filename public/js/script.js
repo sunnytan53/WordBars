@@ -10,7 +10,7 @@ var fetchFake = false;
 var selecetedWords = [];
 var pageFrequency = [];
 var allOriginals = {};
-var pageOriginals = {};
+var cachedSynonyms = {};
 
 function clearFrontend() {
     content.innerHTML = "<h2>Fetching Results From Bing</h2>";
@@ -19,7 +19,7 @@ function clearFrontend() {
     selecetedWords = [];
     // pageFrequency = [];  // it is directly reassign, see below
     allOriginals = {};
-    pageOriginals = {};
+    cachedSynonyms = {};
 }
 
 async function showData() {
@@ -28,17 +28,27 @@ async function showData() {
     // *** wordnet takes time to search synonyms
     // *** don't waste too much time on low frequency words
     pageFrequency = frequency.slice(0, 40);  // based on first reference
+    let findSynonyms = {};
     for (let [stem, freq] of pageFrequency) {
-        pageOriginals[stem] = allOriginals[stem];
+        if (!(stem in cachedSynonyms)) {
+            findSynonyms[stem] = allOriginals[stem];
+        }
     }
 
     // lookup synonyms in wordnet and store them (Sunny)
-    let wordnet = await fetch("/wordnet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(pageOriginals)
-    }).then(response => response.json());
-    console.log(wordnet)
+    if (findSynonyms) {
+        await fetch("/wordnet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(findSynonyms)
+        })
+            .then(response => response.json())
+            .then(synonyms => {
+                for (let stem in synonyms) {
+                    cachedSynonyms[stem] = synonyms[stem];
+                }
+            })
+    }
 
     html_str = ""  // do NOT add up on innerHTML (can cause lag)
     results.forEach(rs => {
@@ -135,7 +145,8 @@ async function processResults() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(strs)
-    }).then(response => response.json())
+    })
+        .then(response => response.json())
 
     for (let i = 0; i < fetched.length; i++) {  // for each result
         let frequencyTable = new Map();
