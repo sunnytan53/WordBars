@@ -7,18 +7,18 @@ app.use(express.json());
 
 app.use("/public", express.static("public"));
 
-app.get("/", function (req, res) {
+app.get("/", (req, res) => {
     res.sendFile(__dirname + "/index.html");
 });
 
+// stemming and return both originals and stems (Japheth & Sunny)
 var tokenizer = new natural.WordTokenizer();
-var wordnet = natural.WordNet();
-app.post("/stem", function (req, res) {
+app.post("/stem", (req, res) => {
     let sent = [];
-    for (str of req.body) {
+    for (word of req.body) {
         let stemmed = [];
-        let tokens = removeStopwords(
-            tokenizer.tokenize(str.toLowerCase()).filter(element => element.length > 2)
+        let tokens = removeStopwords(  // replaced remove_common_words() in backend
+            tokenizer.tokenize(word.toLowerCase().replace(/[0-9]/g, "")).filter(element => element.length > 2)
         );
         for (s of tokens) {
             stemmed.push([s, natural.PorterStemmer.stem(s)]);
@@ -28,7 +28,39 @@ app.post("/stem", function (req, res) {
     res.send(sent);
 });
 
-app.get("/fake", function (req, res) {
+// look up synonyms in WordNet (Sunny)
+const WordNet = require("node-wordnet");
+var wordnet = new WordNet();
+app.post("/wordnet", async (req, res) => {
+    let allSynnonyms = {};
+
+    for (let stem in req.body) {  // for each stemmed word
+        let synset = {};
+
+        await Promise.all(req.body[stem].map(word => wordnet.lookupAsync(word)))
+        .then(results => {
+            results.forEach(result => {
+                if (!(result["pos"] in synset)) {
+                    synset[result["pos"]] = [];
+                }
+                synset[result["pos"]].push(result["synsetOffset"]);
+            })
+        }) 
+
+        let synonymTable = [];
+        for (let pos in synset) {
+            for (let ofs of synset[pos]) {
+                synonymTable.push([pos, ofs]);
+            }
+        }
+
+        allSynnonyms[stem] = synonymTable;
+    }
+
+    res.send(allSynnonyms)
+})
+
+app.get("/fake", (req, res) => {
     res.send({
         "webPages": {
             "value": [
@@ -138,6 +170,6 @@ app.get("/fake", function (req, res) {
 })
 
 const port = 3030;
-app.listen(port, function () {
+app.listen(port, () => {
     console.log("Host at: http://localhost:" + port);
 });

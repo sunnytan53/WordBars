@@ -10,6 +10,7 @@ var fetchFake = false;
 var selecetedWords = [];
 var pageFrequency = [];
 var allOriginals = {};
+var pageOriginals = {};
 
 function clearFrontend() {
     content.innerHTML = "<h2>Fetching Results From Bing</h2>";
@@ -18,11 +19,26 @@ function clearFrontend() {
     selecetedWords = [];
     // pageFrequency = [];  // it is directly reassign, see below
     allOriginals = {};
+    pageOriginals = {};
 }
 
-function showData() {
+async function showData() {
     let [results, frequency] = getResults(selecetedWords);
-    pageFrequency = frequency;
+    // *** it is important to shrink whole wordbars
+    // *** wordnet takes time to search synonyms
+    // *** don't waste too much time on low frequency words
+    pageFrequency = frequency.slice(0, 40);  // based on first reference
+    for (let [stem, freq] of pageFrequency) {
+        pageOriginals[stem] = allOriginals[stem];
+    }
+
+    // lookup synonyms in wordnet and store them (Sunny)
+    let wordnet = await fetch("/wordnet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pageOriginals)
+    }).then(response => response.json());
+    console.log(wordnet)
 
     html_str = ""  // do NOT add up on innerHTML (can cause lag)
     results.forEach(rs => {
@@ -37,24 +53,23 @@ function showData() {
     wordbars.innerHTML = html_str;
 }
 
-function clickWordBars(index) {
+async function clickWordBars(index) {
+    content.innerHTML = "<h2>Sorting taking place</h2>"
+    wordbars.innerHTML = ""
     word = pageFrequency[index][0]
     selection.innerHTML += `<span onclick="clickSelection(${selecetedWords.length})">${allOriginals[word][0]}</span>`;
     selecetedWords.push(word);
 
-    showData();
+    await showData();
 }
 
-function clickSelection(index) {
+async function clickSelection(index) {
+    content.innerHTML = "<h2>Sorting taking place</h2>"
+    wordbars.innerHTML = ""
     selecetedWords.splice(index, 1);
+    selection.removeChild(selection.children[index])
 
-    html_str = "";
-    selecetedWords.forEach((word, index) => {
-        html_str += `<span onclick="clickSelection(${index})">${allOriginals[word][0]}</span>`
-    })
-    selection.innerHTML = html_str;
-
-    showData();
+    await showData();
 }
 
 searchButton.onclick = async function () {
@@ -88,14 +103,14 @@ searchButton.onclick = async function () {
 
     await processResults()
 
-    showData();
+    await showData();
 };
 
 // press enter = clicking search button
-searchBox.addEventListener("keypress", function (event) {
+searchBox.addEventListener("keypress", async function (event) {
     if (event.key === "Enter") {
         event.preventDefault();
-        searchButton.click();
+        await searchButton.click();
     }
 });
 
@@ -104,7 +119,7 @@ const testButton = document.getElementById("test-button");
 testButton.onclick = async function () {
     searchBox.value = "computer science";
     fetchFake = true;
-    searchButton.click();
+    await searchButton.click();
     fetchFake = false;
 };
 
@@ -115,7 +130,7 @@ async function processResults() {
     let strs = [];
     globalResults.forEach(result => strs.push(result["title"] + " " + result["snippet"]))
 
-    // send them all at once to save resource (frontend-Sunny)
+    // send them all at once to save resource (Sunny)
     let fetched = await fetch("/stem", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,7 +141,7 @@ async function processResults() {
         let frequencyTable = new Map();
 
         for (let [orig, stem] of fetched[i]) {  // for each word
-            // integrated from getLocalFrequencyTable() (backend-Japheth)
+            // integrated from getLocalFrequencyTable() (Japheth)
             if (frequencyTable.has(stem)) {
                 frequencyTable.set(stem, frequencyTable.get(stem) + 1);
             }
@@ -134,22 +149,21 @@ async function processResults() {
                 frequencyTable.set(stem, 1);
             }
 
-            // store originals respected to all results (frontend-Sunny)
+            // store originals respected to all results (Sunny)
             if (!(stem in allOriginals)) {
-                allOriginals[stem] = new Set();
+                allOriginals[stem] = [];
             }
-            allOriginals[stem].add(orig);
+            allOriginals[stem].push(orig);
         }
 
-        // store frequency table for each result (backend-Japheth)
+        // store frequency table for each result (Japheth)
         globalResults[i]["frequency"] = frequencyTable;
     }
 
-    // convert all set to list for better access and manipulation (frontend-Sunny)
+    // convert all set to list for better access and manipulation (Sunny)
     for (key in allOriginals) {
-        allOriginals[key] = [...allOriginals[key]];
+        allOriginals[key] = [...new Set(allOriginals[key])];
     }
-
 }
 
 
@@ -246,13 +260,6 @@ function getResultsBySelectedWords(globalResults, selectedWords) {
 //                                         .toLowerCase()})
 //     })
 //     .then(response => response.json());
-
-//     for (let i = 0; i < stemmed.length; i++) {
-//         if (!(stemmed[i] in globalStems)) {
-//             globalStems[stemmed[i]] = new Set();
-//         }
-//         globalStems[stemmed[i]].add(original[i]);
-//     }
 
 //     globalResults.push({
 //         "title": title,
