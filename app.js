@@ -29,33 +29,45 @@ app.post("/stem", (req, res) => {
 });
 
 // look up synonyms in WordNet (Sunny)
+// question1: what to do with compounded word, e.g. machine_learning
+// question2: what to do with single synonyms? 
 const WordNet = require("node-wordnet");
 var wordnet = new WordNet();
 app.post("/wordnet", async (req, res) => {
-    let allSynnonyms = {};
+    let promises = [];
+    let indices = [];
 
-    for (let stem in req.body) {  // for each stemmed word
-        let synset = {};
-
-        await Promise.all(req.body[stem].map(word => wordnet.lookupAsync(word)))
-        .then(results => {
-            results.forEach(result => {
-                if (!(result["pos"] in synset)) {
-                    synset[result["pos"]] = [];
-                }
-                synset[result["pos"]].push(result["synsetOffset"]);
-            })
-        }) 
-
-        let synonymTable = [];
-        for (let pos in synset) {
-            for (let ofs of synset[pos]) {
-                synonymTable.push([pos, ofs]);
-            }
+    for (let stem in req.body) {
+        for (let word of req.body[stem]) {
+            promises.push(wordnet.lookupAsync(word));
         }
-
-        allSynnonyms[stem] = synonymTable;
+        promises.push(wordnet.lookupAsync(stem));
+        indices.push([stem, promises.length]);
     }
+
+    let allSynnonyms = {};
+    await Promise.all(promises)
+        .then(lookups => {
+            let s = 0;
+            for (let [stem, i] of indices) {
+                let offsets = {};
+                for (results of lookups.slice(s, i)) {
+                    for (result of results) {
+                        let key = result["pos"] + result["synsetOffset"];
+                        synonyms = result["synonyms"]//.filter(ele => !(ele.includes("_")));
+                        offsets[key] = { "synonyms": synonyms, "def": result["def"] };
+                    }
+                }
+
+                let synonymTable = [];
+                for (let key in offsets) {
+                    synonymTable.push([key.charAt(0), offsets[key]])
+                }
+                allSynnonyms[stem] = synonymTable;
+
+                s = i;
+            }
+        })
 
     res.send(allSynnonyms)
 })
