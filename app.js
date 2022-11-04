@@ -31,8 +31,9 @@ app.post("/stem", (req, res) => {
 // look up synonyms in WordNet (Sunny)
 // question1: what to do with compounded word, e.g. machine_learning
 // question2: what to do with single synonyms? 
+const tenses = {"n": "Noun", "v": "Verb", "a": "Adj.", "s": "Adj.", "r": "Adv."};
 const WordNet = require("node-wordnet");
-var wordnet = new WordNet({cache: true});
+var wordnet = new WordNet();
 app.post("/wordnet", async (req, res) => {
     let promises = [];
     let indices = [];
@@ -46,23 +47,32 @@ app.post("/wordnet", async (req, res) => {
     }
 
     let allSynnonyms = {};
-    let senses = {"n": "noun", "v": "verb", "a": "adj", "s": "adj", "r": "adv"};
     await Promise.all(promises)
         .then(lookups => {
             let s = 0;
             for (let [stem, i] of indices) {
-                let offsets = {};
+                let offsets = {};   
                 for (results of lookups.slice(s, i)) {
                     for (result of results) {
                         let key = result["pos"] + result["synsetOffset"];
-                        synonyms = result["synonyms"]//.filter(ele => !(ele.includes("_")));
-                        offsets[key] = { "synonyms": synonyms, "def": result["def"] };
+                        synonyms = result["synonyms"].filter(ele => !(ele.includes("_")));
+                        if (synonyms.length > 1) {  // remove single synonym set
+                            let set = new Set();
+                            for (s of synonyms) {
+                                set.add(natural.PorterStemmer.stem(s))
+                            }
+                            offsets[key] = { "synonyms": synonyms, "stem": [...set], "def": result["def"] };
+                        }
                     }
                 }
 
-                let synonymTable = [];
+                let synonymTable = {};
                 for (let key in offsets) {
-                    synonymTable.push([senses[key.charAt(0)], offsets[key]])
+                    let tense = tenses[key.charAt(0)];
+                    if (!(tense in synonymTable)) {
+                        synonymTable[tense] = [];
+                    }
+                    synonymTable[tense].push(offsets[key]);
                 }
                 allSynnonyms[stem] = synonymTable;
 
