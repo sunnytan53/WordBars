@@ -32,7 +32,7 @@ app.post("/stem", (req, res) => {
 // question1: what to do with compounded word, e.g. machine_learning
 // question2: what to do with single synonyms? 
 const WordNet = require("node-wordnet");
-var wordnet = new WordNet();
+var wordnet = new WordNet("cache");
 app.post("/wordnet", async (req, res) => {
     let promises = [];
     let indices = [];
@@ -46,6 +46,7 @@ app.post("/wordnet", async (req, res) => {
     }
 
     let allSynnonyms = {};
+    let senses = {"n": "noun", "v": "verb"}
     await Promise.all(promises)
         .then(lookups => {
             let s = 0;
@@ -61,7 +62,11 @@ app.post("/wordnet", async (req, res) => {
 
                 let synonymTable = [];
                 for (let key in offsets) {
-                    synonymTable.push([key.charAt(0), offsets[key]])
+                    if (!(key.charAt(0) in senses)) {
+                        console.log(key.charAt(0));
+                        console.log(offsets[key]);
+                    }
+                    synonymTable.push([senses[key.charAt(0)], offsets[key]])
                 }
                 allSynnonyms[stem] = synonymTable;
 

@@ -24,31 +24,31 @@ function clearFrontend() {
 
 async function showData() {
     let [results, frequency] = getResults(selecetedWords);
-    // *** it is important to shrink whole wordbars
-    // *** wordnet takes time to search synonyms
-    // *** don't waste too much time on low frequency words
-    pageFrequency = frequency.slice(0, 40);  // based on first reference
-    let findSynonyms = {};
-    for (let [stem, freq] of pageFrequency) {
-        if (!(stem in cachedSynonyms)) {
-            findSynonyms[stem] = allOriginals[stem];
-        }
-    }
+    pageFrequency = frequency.slice(0, 40);  // based on first reference, 40 is a good amount
 
-    // lookup synonyms in wordnet and store them (Sunny)
-    if (findSynonyms) {
-        await fetch("/wordnet", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(findSynonyms)
-        })
-            .then(response => response.json())
-            .then(synonyms => {
-                for (let stem in synonyms) {
-                    cachedSynonyms[stem] = synonyms[stem];
-                }
-            })
-    }
+    // abandoned since cache storage is enabled in WordNet for 100x boost (as author said)
+    // *** it is important to cache synonyms for each search since it takes some time
+    // let findSynonyms = {};
+    // for (let [stem, freq] of pageFrequency) {
+    //     if (!(stem in cachedSynonyms)) {
+    //         findSynonyms[stem] = allOriginals[stem];
+    //     }
+    // }
+
+    // // lookup synonyms in wordnet and store them
+    // if (findSynonyms) {
+    //     await fetch("/wordnet", {
+    //         method: "POST",
+    //         headers: { "Content-Type": "application/json" },
+    //         body: JSON.stringify(findSynonyms)
+    //     })
+    //         .then(response => response.json())
+    //         .then(synonyms => {
+    //             for (let stem in synonyms) {
+    //                 cachedSynonyms[stem] = synonyms[stem];
+    //             }
+    //         })
+    // }
 
     html_str = ""  // do NOT add up on innerHTML (can cause lag)
     results.forEach(rs => {
@@ -57,13 +57,17 @@ async function showData() {
     content.innerHTML = html_str;
 
     html_str = ""  // do NOT add up on innerHTML (can cause lag)
-    frequency.forEach((freq, index) => {
+    pageFrequency.forEach((freq, index) => {
         html_str += `<div onclick="clickWordBars(${index})">${allOriginals[freq[0]][0]}: ${freq[1]}</div>`
     })
     wordbars.innerHTML = html_str;
 }
 
-async function clickWordBars(index) {
+function clickWordBars(index) {
+    console.log(cachedSynonyms[pageFrequency[index][0]])
+}
+
+async function clickWordNet(index) {
     content.innerHTML = "<h2>Sorting taking place</h2>"
     wordbars.innerHTML = ""
     word = pageFrequency[index][0]
@@ -175,6 +179,19 @@ async function processResults() {
     for (key in allOriginals) {
         allOriginals[key] = [...new Set(allOriginals[key])];
     }
+
+    // lookup synonyms in wordnet and store them
+    await fetch("/wordnet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(allOriginals)
+    })
+        .then(response => response.json())
+        .then(synonyms => {
+            for (let stem in synonyms) {
+                cachedSynonyms[stem] = synonyms[stem];
+            }
+        })
 }
 
 
