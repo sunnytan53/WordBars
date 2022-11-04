@@ -26,7 +26,7 @@ async function showData() {
     let [results, frequency] = getResults(selecetedWords);
     pageFrequency = frequency.slice(0, 40);  // based on first reference, 40 is a good amount
 
-    // abandoned since cache storage is enabled in WordNet for 100x boost (as author said)
+    // abandoned since cache is enabled in WordNet for 100x boost (as author said)
     // *** it is important to cache synonyms for each search since it takes some time
     // let findSynonyms = {};
     // for (let [stem, freq] of pageFrequency) {
@@ -34,7 +34,6 @@ async function showData() {
     //         findSynonyms[stem] = allOriginals[stem];
     //     }
     // }
-
     // // lookup synonyms in wordnet and store them
     // if (findSynonyms) {
     //     await fetch("/wordnet", {
