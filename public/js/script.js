@@ -249,63 +249,44 @@ function getResults(selectedWords) {
         return [globalResults, freqArr];
     }
     else {
-        // return a new sorted result with top 20
-        // call your sorting method, or consturct them here
-        // NOTE: do NOT modify globall result, this is a new result
-        // find the documents that has the selected words
-        /*
-        let localFrequency = new Map();
-        const array = [];
-        globalResults.forEach(result => {
-            for (let word of selectedWords) {
-                count = 0;
-                if (result["frequency"].has(word)) {
-                    count += 1;
-                    array.push(result);
-                    // break;
-                }
-                // if count == selectedWords.length {}
-            }
-        })
-        selectedFreqArr = []; // [[result, allValuesOfSelectedWords]]
-        for (result of array) {
-            allValuesOfSelectedWords = 0;
-            for (select of selectedWords) {
-                // add to all values
-                allValuesOfSelectedWords += result["frequency"][select];
-                selectedFreqArr.push([result, allValuesOfSelectedWords]);
-            }
-        }
-        selectedFreqArr = selectedFreqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
-        */
-        const sortArray = getResultsBySelectedWords(selectedWords);
-        const reducedArray = sortArray.slice(0,20);
-        return [globalResults, reducedArray];
+        const sortResults = getResultsBySelectedWords(selectedWords);
+        return [sortResults, []];
     }
 }
 
 //Copy globalResults,
 //Push each result that contains the selected words into a tuple
 //Sort the tuple list
-function getResultsBySelectedWords(globalResults, selectedWords) {
-    let resultList = JSON.parse(JSON.stringify(globalResults));
+function getResultsBySelectedWords(selectedWords) {
     //tuples [result, sum]
-    let resultsContainingSelectedWords = {};
-    resultList.forEach(element => {
-        let sum = 0;
-        for (let wordle of selectedWords) {
-            for(let word of wordle){
-                for (let tupleWord of element.frequency) {
-                    if (tupleWord[0] == word) {
-                        sum = + tupleWord[1];
-                    }
+    let resultsContainingSelectedWords = [];
+    globalResults.forEach(result => {
+        allSum = 0;
+        for (let wordle of selectedWords) { // for nested list
+            let oneSum = 0;
+            for(let word of wordle){  // each word of nested list
+                if (result["frequency"].has(word)) {
+                    oneSum += result["frequency"].get(word);
                 }
             }
-            resultsContainingSelectedWords.push([element, sum]);
+            if (oneSum == 0) {
+                allSum = 0
+                break
+            }
+            allSum += oneSum;
+        }
+        if (allSum > 0){
+            resultsContainingSelectedWords.push([result, allSum]);
         }
     });
     //sort array
-    return resultsContainingSelectedWords = resultsContainingSelectedWords.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
+    sorted = resultsContainingSelectedWords.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
+    console.log();
+    ret = []
+    for (arr of sorted) {
+        ret.push(arr[0]);
+    }
+    return ret;
 }
 
 // ### Integrated into processResults() for server side
