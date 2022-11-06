@@ -28,7 +28,7 @@ app.post("/stem", (req, res) => {
     res.send(sent);
 });
 
-// look up synonyms in WordNet (Sunny)
+// look up synonyms in WordNet (Sunny and Japheth)
 // question1: what to do with compounded word, e.g. machine_learning
 // question2: what to do with single synonyms? 
 const tenses = {"n": "Noun", "v": "Verb", "a": "Adj.", "s": "Adj.", "r": "Adv."};
