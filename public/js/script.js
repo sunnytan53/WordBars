@@ -3,6 +3,7 @@ const wordbars = document.getElementById("word-bars");
 const searchBox = document.getElementById("search-box");
 const searchButton = document.getElementById("search-button");
 const selection = document.getElementById("selection");
+const amount = document.getElementById("amount");
 
 var fetchFake = false;
 
@@ -61,6 +62,7 @@ async function showData() {
         html_str += `<div>${rs["title"]}<br/>${rs["snippet"]}<br/>${rs["url"]}<br/></div><br/>`
     });
     content.innerHTML = html_str;
+    amount.innerHTML = results.length;
 
     showWordBars();
 }
