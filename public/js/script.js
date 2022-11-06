@@ -229,27 +229,11 @@ async function processResults() {
 // BACKEND - Japheth
 function getResults(selectedWords) {
     if (selectedWords.length == 0) {
-        let localFrequency = new Map();
-        globalResults.forEach(result => {
-            for (let [key, value] of result["frequency"].entries()) {
-                if (localFrequency.has(key)) {
-                    localFrequency.set(key, localFrequency.get(key) + value);
-                }
-                else {
-                    localFrequency.set(key, value);
-                }
-            }
-        })
-        let freqArr = [];
-        for (let [key, value] of localFrequency.entries()) {
-            freqArr.push([key, value]);
-        }
-        freqArr = freqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
-        return [globalResults, freqArr];
+        return [globalResults, getSumFrequency()];
     }
     else {
         const sortResults = getResultsBySelectedWords(selectedWords);
-        return [sortResults, []];
+        return [sortResults, getSumFrequency()];
     }
 }
 
@@ -285,6 +269,27 @@ function getResultsBySelectedWords(selectedWords) {
         ret.push(arr[0]);
     }
     return ret;
+}
+
+function getSumFrequency(){
+    let localFrequency = new Map();
+    globalResults.forEach(result => {
+        for (let [key, value] of result["frequency"].entries()) {
+            if (localFrequency.has(key)) {
+                localFrequency.set(key, localFrequency.get(key) + value);
+            }
+            else {
+                localFrequency.set(key, value);
+            }
+        }
+    })
+    let freqArr = [];
+    for (let [key, value] of localFrequency.entries()) {
+        freqArr.push([key, value]);
+    }
+    // console.log(freqArr);
+    freqArr = freqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
+    return freqArr;
 }
 
 // ### Integrated into processResults() for server side
