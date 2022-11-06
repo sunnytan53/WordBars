@@ -117,7 +117,6 @@ async function clickWordNet(index, tense, synonymIndex) {
     selectedWords.push(word);
 
     await showData();
-    console.log(selectedWords);
 }
 
 async function clickSelection(index) {
@@ -127,7 +126,6 @@ async function clickSelection(index) {
     selection.removeChild(selection.children[index])
 
     await showData();
-    console.log(selectedWords);
 }
 
 searchButton.onclick = async function () {
@@ -244,7 +242,6 @@ function getResults(selectedWords) {
         for (let [key, value] of localFrequency.entries()) {
             freqArr.push([key, value]);
         }
-        // console.log(freqArr);
         freqArr = freqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
         return [globalResults, freqArr];
     }
@@ -281,7 +278,6 @@ function getResultsBySelectedWords(selectedWords) {
     });
     //sort array
     sorted = resultsContainingSelectedWords.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
-    console.log();
     ret = []
     for (arr of sorted) {
         ret.push(arr[0]);
