@@ -253,6 +253,7 @@ function getResults(selectedWords) {
         // call your sorting method, or consturct them here
         // NOTE: do NOT modify globall result, this is a new result
         // find the documents that has the selected words
+        /*
         let localFrequency = new Map();
         const array = [];
         globalResults.forEach(result => {
@@ -276,7 +277,10 @@ function getResults(selectedWords) {
             }
         }
         selectedFreqArr = selectedFreqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
-        return [array, selectedFreqArr];
+        */
+        const sortArray = getResultsBySelectedWords(selectedWords);
+        const reducedArray = sortArray.slice(0,20);
+        return [globalResults, reducedArray];
     }
 }
 
@@ -301,7 +305,7 @@ function getResultsBySelectedWords(globalResults, selectedWords) {
         }
     });
     //sort array
-    resultsContainingSelectedWords = resultsContainingSelectedWords.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
+    return resultsContainingSelectedWords = resultsContainingSelectedWords.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
 }
 
 // ### Integrated into processResults() for server side
