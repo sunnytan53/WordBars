@@ -229,11 +229,11 @@ async function processResults() {
 // BACKEND - Japheth
 function getResults(selectedWords) {
     if (selectedWords.length == 0) {
-        return [globalResults, getSumFrequency()];
+        return [globalResults, getSumFrequency(globalResults)];
     }
     else {
         const sortResults = getResultsBySelectedWords(selectedWords);
-        return [sortResults, getSumFrequency()];
+        return [sortResults, getSumFrequency(sortResults)];
     }
 }
 
@@ -271,9 +271,9 @@ function getResultsBySelectedWords(selectedWords) {
     return ret;
 }
 
-function getSumFrequency(){
+function getSumFrequency(results){
     let localFrequency = new Map();
-    globalResults.forEach(result => {
+    results.forEach(result => {
         for (let [key, value] of result["frequency"].entries()) {
             if (localFrequency.has(key)) {
                 localFrequency.set(key, localFrequency.get(key) + value);
