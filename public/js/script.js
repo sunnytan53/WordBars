@@ -1,4 +1,3 @@
-// FRONTEND - Sunny
 const content = document.getElementById("content");
 const wordbars = document.getElementById("word-bars");
 const searchBox = document.getElementById("search-box");
@@ -7,16 +6,18 @@ const selection = document.getElementById("selection");
 
 var fetchFake = false;
 
+var globalResults = [];
 var selectedWords = [];
 var selectedValues = [];
 var pageFrequency = [];
 var allOriginals = {};
 var cachedSynonyms = {};
 
-function clearFrontend() {
+function clearResults() {
     content.innerHTML = "<h2>Fetching Results From Bing</h2>";
     wordbars.innerHTML = "";
     selection.innerHTML = ""
+    globalResults = [];
     selectedWords = [];
     selectedValues = [];
     // pageFrequency = [];  // it is directly reassign, see below
@@ -24,6 +25,9 @@ function clearFrontend() {
     cachedSynonyms = {};
 }
 
+
+
+// FRONTEND - Sunny
 async function showData() {
     let [results, frequency] = getResults(selectedWords);
     pageFrequency = frequency.slice(0, 40);  // based on first reference, 40 is a good amount
@@ -112,7 +116,7 @@ async function clickWordNet(index, tense, synonymIndex) {
     selection.innerHTML += `<button onclick="clickSelection(${selectedWords.length})">${str}</button>`;
     selectedWords.push(word);
 
-    // await showData();
+    await showData();
     console.log(selectedWords);
 }
 
@@ -122,7 +126,7 @@ async function clickSelection(index) {
     selectedValues.splice(index, 1);
     selection.removeChild(selection.children[index])
 
-    // await showData();
+    await showData();
     console.log(selectedWords);
 }
 
@@ -135,8 +139,7 @@ searchButton.onclick = async function () {
     }
 
     // remove old results, also tell users we are fetching new results
-    clearBackend();
-    clearFrontend();
+    clearResults();
 
     // fetch max allowed amount of results
     // based on API Doc, this amount is 50, but after test, it is only 20
@@ -224,12 +227,6 @@ async function processResults() {
 
 
 // BACKEND - Japheth
-var globalResults = [];
-
-function clearBackend() {
-    globalResults = [];
-}
-
 function getResults(selectedWords) {
     if (selectedWords.length == 0) {
         let localFrequency = new Map();
