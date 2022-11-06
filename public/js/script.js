@@ -292,10 +292,12 @@ function getResultsBySelectedWords(globalResults, selectedWords) {
     let resultsContainingSelectedWords = {};
     resultList.forEach(element => {
         let sum = 0;
-        for (let word in selectedWords) {
-            for (let tupleWord of element.frequency) {
-                if (tupleWord[0] == word) {
-                    sum = + tupleWord[1];
+        for (let wordle of selectedWords) {
+            for(let word of wordle){
+                for (let tupleWord of element.frequency) {
+                    if (tupleWord[0] == word) {
+                        sum = + tupleWord[1];
+                    }
                 }
             }
             resultsContainingSelectedWords.push([element, sum]);
