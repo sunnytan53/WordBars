@@ -21,7 +21,7 @@ function clearResults() {
     globalResults = [];
     selectedWords = [];
     selectedValues = [];
-    // pageFrequency = [];  // it is directly reassign, see below
+    pageFrequency = [];  // it is directly reassign, see below
     allOriginals = {};
     cachedSynonyms = {};
 }
@@ -57,11 +57,19 @@ async function showData() {
             })
     }
 
-    html_str = "";  // do NOT add up on innerHTML (can cause lag)
+    // do NOT use raw concatnation to avoid *injection* (found when searching "css style")
+    content.innerHTML = "";
     results.forEach(rs => {
-        html_str += `<div>${rs["title"]}<br/>${rs["snippet"]}<br/>${rs["url"]}<br/></div><br/>`
+        const div = document.createElement("div");
+        const link = document.createElement("a");
+        link.href = rs["url"];
+        link.appendChild(document.createTextNode(rs["title"]))
+        div.appendChild(link);
+        div.appendChild(document.createElement("br"));
+        div.appendChild(document.createTextNode(rs["snippet"]));
+        content.appendChild(div);
+        content.appendChild(document.createElement("br"));
     });
-    content.innerHTML = html_str;
     amount.innerHTML = results.length;
 
     showWordBars();
@@ -108,13 +116,13 @@ async function clickWordNet(index, tense, synonymIndex) {
         word = [pageFrequency[index][0]];
         str = allOriginals[word][0];
     }
-    else{
+    else {
         let table = cachedSynonyms[pageFrequency[index][0]][tense][synonymIndex];
         str = table["synonyms"];
         word = table["stem"];
     }
 
-    content.innerHTML = "If nothing shows up, check if <h3>clickWordNet()</h3> has showData() enable, else it has a bug"
+    // content.innerHTML = "If nothing shows up, check if <h3>clickWordNet()</h3> has showData() enable, else it has a bug"
     selection.innerHTML += `<button onclick="clickSelection(${selectedWords.length})">${str}</button>`;
     selectedWords.push(word);
 
@@ -122,7 +130,7 @@ async function clickWordNet(index, tense, synonymIndex) {
 }
 
 async function clickSelection(index) {
-    content.innerHTML = "If nothing shows up, check if <h3>clickSelection()</h3> has showData() enable, else it has a bug"
+    // content.innerHTML = "If nothing shows up, check if <h3>clickSelection()</h3> has showData() enable, else it has a bug"
     selectedWords.splice(index, 1);
     selectedValues.splice(index, 1);
     selection.removeChild(selection.children[index])
@@ -247,7 +255,7 @@ function getResultsBySelectedWords(selectedWords) {
         allSum = 0;
         for (let wordle of selectedWords) { // for nested list
             let oneSum = 0;
-            for(let word of wordle){  // each word of nested list
+            for (let word of wordle) {  // each word of nested list
                 if (result["frequency"].has(word)) {
                     oneSum += result["frequency"].get(word);
                 }
@@ -258,7 +266,7 @@ function getResultsBySelectedWords(selectedWords) {
             }
             allSum += oneSum;
         }
-        if (allSum > 0){
+        if (allSum > 0) {
             resultsContainingSelectedWords.push([result, allSum]);
         }
     });
@@ -271,7 +279,7 @@ function getResultsBySelectedWords(selectedWords) {
     return ret;
 }
 
-function getSumFrequency(results){
+function getSumFrequency(results) {
     let localFrequency = new Map();
     results.forEach(result => {
         for (let [key, value] of result["frequency"].entries()) {
