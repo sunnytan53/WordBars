@@ -3,15 +3,12 @@ const wordbars = document.getElementById("word-bars");
 const searchBox = document.getElementById("search-box");
 const searchButton = document.getElementById("search-button");
 const fileBox = document.getElementById("saved-files");
-const testButton = document.getElementById("test-button");
 const backButton = document.getElementById("back-button");
 const saveButton = document.getElementById("save-button");
 const selection = document.getElementById("selection");
 const amount = document.getElementById("amount");
-const statusCache = document.getElementById("status");
+const checkbox = document.getElementById("checkbox");
 
-var fetchStored = false;  // should only be controlled within the button click
-var cachePromise = null;
 
 var globalResults = [];
 var selectedWords = [];
@@ -30,8 +27,7 @@ function clearResults() {
     content.innerHTML = "<h2>Fetching Results From Bing</h2>";
     wordbars.innerHTML = "";
     selection.innerHTML = "";
-    statusCache.innerHTML = "";
-    cachePromise = null;
+
     globalResults = [];
     selectedWords = [];
     selectedValues = [];
@@ -39,37 +35,6 @@ function clearResults() {
     currentAllWords = new Set();
     allOriginals = {};
     cachedSynonyms = {};
-}
-
-// FRONTEND - Sunny
-async function fetchSynonyms(freqArr, isAll) {
-    let uncahced = {};
-    for (let [stem, freq] of freqArr) {
-        if (!(stem in cachedSynonyms)) {
-            uncahced[stem] = allOriginals[stem];
-        }
-    }
-
-    // *** it is important to cache synonyms for each search since it takes some time
-    // the module support cache but it is actually slower in terms of user experience
-    return fetch("/wordnet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(uncahced)
-    })
-        .then(response => response.json())
-        .then(synonyms => {
-            for (let stem in synonyms) {
-                cachedSynonyms[stem] = synonyms[stem];
-            }
-            // console.log("RUN");  // should only occur twice per search
-            if (isAll) {
-                cachePromise = true;
-                statusCache.innerHTML = "All fetched";
-                statusCache.style = "color:green;";
-                // console.log("DONE");  // should only occur once per search
-            }
-        });
 }
 
 // load this at initialization
@@ -88,6 +53,60 @@ function loadSavedFiles() {
         });
 }
 
+// fetch partial (this should be waited)
+async function fetchSynonyms(freqArr) {
+    let uncahced = {};
+    let hasNew = false;
+    for (let [stem, freq] of freqArr) {
+        if (!(stem in cachedSynonyms)) {
+            uncahced[stem] = allOriginals[stem];
+            hasNew = true;
+        }
+    }
+
+    // *** it is important to cache synonyms for each search since it takes some time
+    // the module support cache but it is actually slower in terms of user experience
+    if (hasNew) {
+        return fetch("/wordnet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(uncahced)
+        })
+            .then(response => response.json())
+            .then(synonyms => {
+                for (let stem in synonyms) {
+                    cachedSynonyms[stem] = synonyms[stem];
+                }
+            });
+    }
+}
+
+// ABANDON, this is really unnnecassary, because there are too many words to load up
+// fetch all (this should not be waited, just let it stay at the backend)
+// async function fetchAllSynonyms(freqArr) {
+//     let uncahced = {};
+//     for (let [stem, freq] of freqArr) {
+//         uncahced[stem] = allOriginals[stem];
+//     }
+
+//     // *** it is important to cache synonyms for each search since it takes some time
+//     // the module support cache but it is actually slower in terms of user experience
+//     return fetch("/wordnet", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(uncahced)
+//     })
+//         .then(response => response.json())
+//         .then(synonyms => {
+//             for (let stem in synonyms) {
+//                 cachedSynonyms[stem] = synonyms[stem];
+//             }
+//             cachePromise = true;
+//             statusCache.innerHTML = "All fetched";
+//             statusCache.style = "color:green;";
+//         });
+// }
+
 async function showData() {
     let [results, frequency] = getResults(selectedWords);
     pageFrequency = frequency.slice(0, 40);  // based on first reference, 40 is a good amount
@@ -98,23 +117,25 @@ async function showData() {
         currentAllWords.add(x);
     }
 
-    if (cachePromise) {
-        // if cachePromise really exists (either a real promise or just true boolean)
-        // we must wait to get this backend finish finding all synonym sets
-        content.innerHTML = "<h2>Waiting for all synonym sets to be fetched</h2>";
-        await cachePromise;
-    }
-    else {
-        content.innerHTML = "<h2>Fetching synonym set from WordNet for <u>first 40 frequency</u></h2>";
-        statusCache.innerHTML = "finding synonyms (top-freq)";
-        statusCache.style = "color:red;";
-        // we must wait the first 40 to show at the beginning
-        await fetchSynonyms(pageFrequency, false);
-        statusCache.innerHTML = "finding synonyms (low-freq)";
-        statusCache.style = "color:orange;";
-        // create the promise to find all synonym sets, should ONLY run once per search
-        cachePromise = fetchSynonyms(frequency.slice(40), true);
-    }
+    content.innerHTML = "<h2>Fetching synonym set from WordNet for <u>first 40 frequency</u></h2>";
+    await fetchSynonyms(pageFrequency);
+
+    // ABANDON, there are too many words to load up
+    // it is better to load up small partial each time (which takes < 1 second)
+    // if (cachePromise === null) {  // run when a search init
+    //     statusCache.innerHTML = "finding synonyms (low-freq)";
+    //     statusCache.style = "color:orange;";
+    //     // create the promise to find all synonym sets, should ONLY run once per search
+    //     fetchAllSynonyms(frequency.slice(40));
+    //     cachePromise = false;
+    // }
+    // if (!cachePromise) {
+    //     // we must wait the frequency shown on the page
+    //     content.innerHTML = "<h2>Fetching synonym set from WordNet for <u>first 40 frequency</u></h2>";
+    //     statusCache.innerHTML = "finding synonyms (top-freq)";
+    //     statusCache.style = "color:red;";
+    //     await fetchSynonyms(pageFrequency);
+    // }
 
     // do NOT use raw concatnation to avoid *injection* (found when searching "css style")
     content.innerHTML = "";
@@ -143,17 +164,12 @@ function showWordBars() {
 
     maxFreq = pageFrequency[0][1];
     pageFrequency.forEach((freq, index) => {
-        width = freq[1] / maxFreq * 100;
-        color = "crimson";
-        if (width < 30) {
-            color = "pink";
-        }
-        else if (width < 60) {
-            color = "coral";
-        }
+        rate = freq[1] / maxFreq;
+
         html_str += `<div onclick="clickWordBars(${index})" 
                     style="cursor: pointer; margin-bottom: 0.2em; 
-                    padding-bottom: 0.2em; width: ${width}%; background-color: ${color};">
+                    padding-bottom: 0.2em; width: ${(rate * 100) | 0}%; 
+                    background-color: rgb(255,${(255 * (1 - rate)) | 0},${(200 * (1 - rate)) | 0});">
                     ${allOriginals[freq[0]][0]}</div>`;
     });
     wordbars.innerHTML = html_str;
@@ -261,81 +277,56 @@ async function clickSelection(index) {
 backButton.onclick = showWordBars;
 
 searchButton.onclick = async function () {
-    // remove old results, also tell users we are fetching new results
     clearResults();
+    fileBox.value = "";  // this reset the file box
 
-    if (fetchStored) {
-        if (!fileBox.value) {
-            alert("File name (select box) can NOT be empty!");
-            content.innerHTML = "";
-            return;
-        }
-        try {
-            await fetch("/getsavefile", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify([fileBox.value])
-            })
-                .then(res => res.json())
-                .then(data => globalResults = data);
-        }
-        catch {
-            content.innerHTML = `<h3>Can't find this file: ${fileBox.value}</h3>`;
-            return;
+    // alert empty query and return with no other actions
+    let query = searchBox.value;
+    if (!query) {
+        alert("Query (Search Box) can NOT be empty!");
+        content.innerHTML = "";
+        return;
+    }
+
+    try {
+        // fetch 3 times, but it doesn't guarantee it has 60 results (> 3 sometimes fail)
+        for (let i = 0; i < 3; i++) {
+            let fetched = await fetch( // even though I said 50, this includes other resources such as images
+                "https://api.bing.microsoft.com/v7.0/search?count=50&offset=" + i * 50 + "&q=" + query,
+                { headers: { "Ocp-Apim-Subscription-Key": "68dc5cf46ecc419688a1066dd7b2b9d5" } })
+                .then(response => response.json())
+                .then(data => data["webPages"]["value"]);
+
+            // push them to backend globalResults
+            for (let result of fetched) {
+                globalResults.push({
+                    "title": result["name"],
+                    "snippet": result["snippet"],
+                    "url": result["url"],
+                });
+            }
         }
     }
-    else {
-        // alert empty query and return with no other actions
-        let query = searchBox.value;
-        if (!query) {
-            alert("Query (Search Box) can NOT be empty!");
-            content.innerHTML = "";
+    catch {
+        if (globalResults.length == 0) {
+            content.innerHTML = "<h3>Unfortunately, the Bing API says we reached the limit, so only fake search works now</h3>";
             return;
         }
-
-        try {
-            statusCache.innerHTML = "fetching web pages";
-            statusCache.style = "color:red;";
-
-            // fetch 3 times, but it doesn't guarantee it has 60 results (> 3 sometimes fail)
-            for (let i = 0; i < 3; i++) {
-                let fetched = await fetch( // even though I said 50, this includes other resources such as images
-                    "https://api.bing.microsoft.com/v7.0/search?count=50&offset=" + i * 50 + "&q=" + query,
-                    { headers: { "Ocp-Apim-Subscription-Key": "68dc5cf46ecc419688a1066dd7b2b9d5" } })
-                    .then(response => response.json())
-                    .then(data => data["webPages"]["value"]);
-
-                // push them to backend globalResults
-                for (let result of fetched) {
-                    globalResults.push({
-                        "title": result["name"],
-                        "snippet": result["snippet"],
-                        "url": result["url"],
-                    });
-                }
-            }
-        }
-        catch {
-            if (globalResults.length == 0) {
-                content.innerHTML = "<h3>Unfortunately, the Bing API says we reached the limit, so only fake search works now</h3>";
-                return;
-            }
-            else {
-                alert(`<h3>There are too many requests/fetches at once so that Bing bans us, but there are still results</h3>
+        else {
+            alert(`<h3>There are too many requests/fetches at once so that Bing bans us, but there are still results</h3>
                 <h3>If you want all results from fetches, try fetch again, this sometimes happen</h3>`);
-            }
         }
-
-        let set = new Set();
-        let realResults = [];
-        for (result of globalResults) {
-            if (!set.has(result["url"])) {
-                set.add(result["url"]);
-                realResults.push(result);
-            }
-        }
-        globalResults = realResults;
     }
+
+    let set = new Set();
+    let realResults = [];
+    for (result of globalResults) {
+        if (!set.has(result["url"])) {
+            set.add(result["url"]);
+            realResults.push(result);
+        }
+    }
+    globalResults = realResults;
 
     await processResults();
 
@@ -350,12 +341,6 @@ searchBox.addEventListener("keypress", async function (event) {
     }
 });
 
-testButton.onclick = async function () {
-    fetchStored = true;
-    await searchButton.click();
-    fetchStored = false;
-};
-
 saveButton.onclick = function () {
     if (!searchBox.value) {
         alert("Value of search box is required for file name!");
@@ -369,8 +354,42 @@ saveButton.onclick = function () {
     loadSavedFiles();
 };
 
+fileBox.onchange = async () => {
+    if (fileBox.value == "") {  // ignore empty selection
+        return;
+    }
+    if (!fileBox.value) {
+        alert("File name (select box) can NOT be empty!");
+        content.innerHTML = "";
+        return;
+    }
 
+    clearResults();
 
+    try {
+        await fetch("/getsavefile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify([fileBox.value])
+        })
+            .then(res => res.json())
+            .then(data => globalResults = data);
+    }
+    catch {
+        content.innerHTML = `<h3>Can't find this file: ${fileBox.value}</h3>`;
+        return;
+    }
+
+    await processResults();
+
+    await showData();
+};
+
+checkbox.onclick = async () => {
+    if (globalResults.length > 0) {
+        await showData();
+    }
+};
 
 
 // SERVER (mixed front- and back-end)
@@ -421,15 +440,21 @@ async function processResults() {
 
 
 
-// BACKEND - Japheth
+
 function getResults(selectedWords) {
+    theResult = null;
     if (selectedWords.length == 0) {
-        return [globalResults, getSumFrequency(globalResults)];
+        theResult = globalResults;
     }
     else {
-        const sortResults = getResultsBySelectedWords(selectedWords);
-        return [sortResults, getSumFrequency(sortResults)];
+        theResult = getResultsBySelectedWords(selectedWords);
     }
+
+    if (checkbox.checked) {
+        theResult = theResult.slice(0, 10);
+    }
+
+    return [theResult, getSumFrequency(theResult)];
 }
 
 //Copy globalResults,
@@ -439,21 +464,27 @@ function getResultsBySelectedWords(selectedWords) {
     //tuples [result, sum]
     let resultsContainingSelectedWords = [];
     globalResults.forEach(result => {
-        allSum = 0;
-        for (let wordle of selectedWords) { // for nested list
+        let count = 0;
+        let allSum = 0;
+        for (let wordle of selectedWords) { // for eac synonym set
             let oneSum = 0;
-            for (let word of wordle) {  // each word of nested list
+            for (let word of wordle) {  // each word of  synonym set
                 if (result["frequency"].has(word)) {
                     oneSum += result["frequency"].get(word);
                 }
             }
-            if (oneSum == 0) {
-                allSum = 0;
-                break;
+            if (oneSum > 0) {
+                count++;  // count how many synonym set is worked
             }
             allSum += oneSum;
         }
-        if (allSum > 0) {
+        if (checkbox.checked) {
+            // show results based on sum * count of fit groups
+            // this ensure the results match all groups stay on top
+            resultsContainingSelectedWords.push([result, allSum * count]);
+        }
+        else if (count == selectedWords.length && allSum > 0) {
+            // show results that fits all groups (AND relationship)
             resultsContainingSelectedWords.push([result, allSum]);
         }
     });
