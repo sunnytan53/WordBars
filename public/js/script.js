@@ -106,11 +106,11 @@ async function showData() {
     }
     else {
         content.innerHTML = "<h2>Fetching synonym set from WordNet for <u>first 40 frequency</u></h2>";
-        statusCache.innerHTML = "finding synonyms of top-freq word";
+        statusCache.innerHTML = "finding synonyms (top-freq)";
         statusCache.style = "color:red;";
         // we must wait the first 40 to show at the beginning
         await fetchSynonyms(pageFrequency, false);
-        statusCache.innerHTML = "finding synonyms of low-freq word";
+        statusCache.innerHTML = "finding synonyms (low-freq)";
         statusCache.style = "color:orange;";
         // create the promise to find all synonym sets, should ONLY run once per search
         cachePromise = fetchSynonyms(frequency.slice(40), true);
@@ -140,8 +140,21 @@ function showWordBars() {
     backButton.disabled = true;
     html_str = "";  // do NOT add up on innerHTML (can cause lag)
     wordbars.scrollTo(0, 0);
+
+    maxFreq = pageFrequency[0][1];
     pageFrequency.forEach((freq, index) => {
-        html_str += `<div onclick="clickWordBars(${index})">${allOriginals[freq[0]][0]}: ${freq[1]}</div>`;
+        width = freq[1] / maxFreq * 100;
+        color = "crimson";
+        if (width < 30) {
+            color = "pink";
+        }
+        else if (width < 60) {
+            color = "coral";
+        }
+        html_str += `<div onclick="clickWordBars(${index})" 
+                    style="cursor: pointer; margin-bottom: 0.2em; 
+                    padding-bottom: 0.2em; width: ${width}%; background-color: ${color};">
+                    ${allOriginals[freq[0]][0]}</div>`;
     });
     wordbars.innerHTML = html_str;
 }
@@ -149,8 +162,8 @@ function showWordBars() {
 function clickWordBars(index) {
     root_word = pageFrequency[index][0];
     synonymTable = cachedSynonyms[root_word];
-    html_str = `<div onclick=clickWordNet(${index},'',-1)>
-                <h4>single word selection</h4>
+    html_str = `<div onclick=clickWordNet(${index},'',-1) style="cursor: pointer; background-color: lightgreen;">
+                <h3>single word selection</h3>
                 <div>${allOriginals[root_word][0]}</div></div>`;
 
     valid_str = {}, invalid_str = {};
@@ -174,9 +187,9 @@ function clickWordBars(index) {
                 temp_str += `<div style="color:${color};">${table["synonyms"][j]}</div>`;
             }
 
-            if (isValid) {  // must include so it fits above algorithm
+            if (isValid) {
                 valid_str[tense].push(`<div onclick="clickWordNet(${index},'${tense}',${i})" 
-                            style="background-color: lightgreen;">
+                            style="cursor: pointer; background-color: lightgreen;">
                             <h4>${table["def"]}</h4>${temp_str}</div>`);
             }
             else {
@@ -265,7 +278,6 @@ searchButton.onclick = async function () {
             })
                 .then(res => res.json())
                 .then(data => globalResults = data);
-            console.log(globalResults);
         }
         catch {
             content.innerHTML = `<h3>Can't find this file: ${fileBox.value}</h3>`;
