@@ -57,31 +57,34 @@ app.post("/wordnet", async (req, res) => {
                     for (result of results) {
                         let key = result["pos"] + result["synsetOffset"];
                         synonyms = result["synonyms"].filter(ele => !(ele.includes("_")));
-                        if (synonyms.length > 1) {  // remove single synonym set
-                            let arr = [];
-                            for (s of synonyms) {
-                                arr.push(natural.PorterStemmer.stem(s));
-                            }
-                            let set = [...new Set(arr)];
-                            if (set.length > 1) {  // remove single root word synonym set
-                                offsets[key] = {
-                                    "synonyms": synonyms,
-                                    "stemmeds": arr,
-                                    "stem": set,
-                                    "def": result["def"]
-                                };
-                            }
+                        let arr = [];
+                        for (s of synonyms) {
+                            arr.push(natural.PorterStemmer.stem(s));
                         }
+                        let set = [...new Set(arr)];
+                        offsets[key] = {
+                            "synonyms": synonyms,
+                            "stemmeds": arr,
+                            "stem": set,
+                            "def": result["def"]
+                        };
                     }
                 }
 
                 let synonymTable = {};
                 for (let key in offsets) {
-                    let tense = tenses[key.charAt(0)];
-                    if (!(tense in synonymTable)) {
-                        synonymTable[tense] = [];
+                    let table = offsets[key];
+                    // only keep tables that has two synonym root words
+                    // and really contains the original root word
+                    // some bad example (found) :
+                    // "world" may has a set that does not contain "world"
+                    if (table["stem"].length > 1 && table["stem"].includes(stem)) {
+                        let tense = tenses[key.charAt(0)];
+                        if (!(tense in synonymTable)) {
+                            synonymTable[tense] = [];
+                        }
+                        synonymTable[tense].push(table);
                     }
-                    synonymTable[tense].push(offsets[key]);
                 }
                 allSynnonyms[stem] = synonymTable;
 
