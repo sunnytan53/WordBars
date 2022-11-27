@@ -12,7 +12,7 @@ var cachePromise = null;
 
 var globalResults = [];
 var selectedWords = [];
-var selectedValues = [];
+var selectedValues = [];  // since I used splice(), so not using Set
 var pageFrequency = [];
 var currentAllWords = new Set();
 var allOriginals = {};
@@ -176,29 +176,33 @@ function clickWordBars(index) {
 }
 
 async function clickWordNet(index, tense, synonymIndex) {
-    root_word = pageFrequency[index][0]
-    values = root_word + tense + synonymIndex;
-    if (selectedValues.includes(values)) {
-        alert("Repeated selection!!!");
-        return;
-    }
-    selectedValues.push(values);
+    root_word = pageFrequency[index][0];
+    unique = "";
 
     if (tense == "") {
+        unique = root_word;
         word = [root_word];
-        str = allOriginals[word[0]][0];
+        str = allOriginals[unique][0];
     }
     else {
         let table = cachedSynonyms[root_word][tense][synonymIndex];
-        arr = []
+        unique = table["def"];
+        arr = [];
         for (let j = 0; j < table["synonyms"].length; j++) {
             if (currentAllWords.has(table["stemmeds"][j])) {
                 arr.push(table["synonyms"][j]);
             }
         }
-        str = arr.join(" | ")
+        str = arr.join(" | ");
         word = table["stem"];
     }
+
+
+    if (selectedValues.includes(unique)) {
+        alert("Repeated selection!!!");
+        return;
+    }
+    selectedValues.push(unique);
 
     selection.innerHTML += `<button onclick="clickSelection(${selectedWords.length})">${str}</button>`;
     selectedWords.push(word);
@@ -210,8 +214,8 @@ async function clickSelection(index) {
     selectedWords.splice(index, 1);
     selectedValues.splice(index, 1);
     selection.removeChild(selection.children[index]);
-    for (; index < selection.children.length; index++){
-        selection.children[index].setAttribute("onclick", `clickSelection(${index})`)
+    for (; index < selection.children.length; index++) {
+        selection.children[index].setAttribute("onclick", `clickSelection(${index})`);
     }
 
     await showData();
