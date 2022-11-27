@@ -107,6 +107,8 @@ async function showData() {
     amount.innerHTML = results.length;
 
     showWordBars();
+    console.log(selectedWords);
+    console.log(selectedValues);
 }
 
 function showWordBars() {
@@ -147,7 +149,7 @@ function clickWordBars(index) {
                 temp_str += `<div style="color:${color};">${table["synonyms"][j]}</div>`;
             }
 
-            if (isValid) {
+            if (isValid && table["stemmeds"].includes(root_word)) {  // must include so it fits above algorithm
                 valid_str[tense].push(`<div onclick="clickWordNet(${index},'${tense}',${i})" 
                             style="background-color: lightgreen;">
                             <h4>${table["def"]}</h4>${temp_str}</div>`);
@@ -174,20 +176,27 @@ function clickWordBars(index) {
 }
 
 async function clickWordNet(index, tense, synonymIndex) {
-    values = index + tense + synonymIndex;
+    root_word = pageFrequency[index][0]
+    values = root_word + tense + synonymIndex;
     if (selectedValues.includes(values)) {
-        alert("Repeated selction!!!");
+        alert("Repeated selection!!!");
         return;
     }
     selectedValues.push(values);
 
     if (tense == "") {
-        word = [pageFrequency[index][0]];
-        str = allOriginals[word][0];
+        word = [root_word];
+        str = allOriginals[word[0]][0];
     }
     else {
-        let table = cachedSynonyms[pageFrequency[index][0]][tense][synonymIndex];
-        str = table["synonyms"];
+        let table = cachedSynonyms[root_word][tense][synonymIndex];
+        arr = []
+        for (let j = 0; j < table["synonyms"].length; j++) {
+            if (currentAllWords.has(table["stemmeds"][j])) {
+                arr.push(table["synonyms"][j]);
+            }
+        }
+        str = arr.join(" | ")
         word = table["stem"];
     }
 
@@ -201,6 +210,9 @@ async function clickSelection(index) {
     selectedWords.splice(index, 1);
     selectedValues.splice(index, 1);
     selection.removeChild(selection.children[index]);
+    for (; index < selection.children.length; index++){
+        selection.children[index].setAttribute("onclick", `clickSelection(${index})`)
+    }
 
     await showData();
 }
