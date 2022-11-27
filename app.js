@@ -23,7 +23,7 @@ app.post("/stem", (req, res) => {
         for (s of tokens) {
             stemmed.push([s, natural.PorterStemmer.stem(s)]);
         }
-        sent.push(stemmed)
+        sent.push(stemmed);
     }
     res.send(sent);
 });
@@ -31,7 +31,7 @@ app.post("/stem", (req, res) => {
 // look up synonyms in WordNet (Sunny and Japheth)
 // question1: what to do with compounded word, e.g. machine_learning
 // question2: what to do with single synonyms? 
-const tenses = {"n": "Noun", "v": "Verb", "a": "Adj.", "s": "Adj.", "r": "Adv."};
+const tenses = { "n": "Noun", "v": "Verb", "a": "Adj.", "s": "Adj.", "r": "Adv." };
 const WordNet = require("node-wordnet");
 var wordnet = new WordNet();
 app.post("/wordnet", async (req, res) => {
@@ -51,17 +51,25 @@ app.post("/wordnet", async (req, res) => {
         .then(lookups => {
             let s = 0;
             for (let [stem, i] of indices) {
-                let offsets = {};   
+                let offsets = {};
                 for (results of lookups.slice(s, i)) {
                     for (result of results) {
                         let key = result["pos"] + result["synsetOffset"];
                         synonyms = result["synonyms"].filter(ele => !(ele.includes("_")));
                         if (synonyms.length > 1) {  // remove single synonym set
-                            let set = new Set();
+                            let arr = [];
                             for (s of synonyms) {
-                                set.add(natural.PorterStemmer.stem(s))
+                                arr.push(natural.PorterStemmer.stem(s));
                             }
-                            offsets[key] = { "synonyms": synonyms, "stem": [...set], "def": result["def"] };
+                            let set = [...new Set(arr)];
+                            if (set.length > 1) {  // remove single root word synonym set
+                                offsets[key] = {
+                                    "synonyms": synonyms,
+                                    "stemmeds": arr,
+                                    "stem": set,
+                                    "def": result["def"]
+                                };
+                            }
                         }
                     }
                 }
@@ -78,10 +86,10 @@ app.post("/wordnet", async (req, res) => {
 
                 s = i;
             }
-        })
+        });
 
-    res.send(allSynnonyms)
-})
+    res.send(allSynnonyms);
+});
 
 app.get("/fake", (req, res) => {
     res.send({
@@ -189,8 +197,8 @@ app.get("/fake", (req, res) => {
                 }
             ]
         }
-    })
-})
+    });
+});
 
 const port = 3030;
 app.listen(port, () => {

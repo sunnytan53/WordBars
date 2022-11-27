@@ -2,6 +2,7 @@ const content = document.getElementById("content");
 const wordbars = document.getElementById("word-bars");
 const searchBox = document.getElementById("search-box");
 const searchButton = document.getElementById("search-button");
+const backButton = document.getElementById("back-button");
 const selection = document.getElementById("selection");
 const amount = document.getElementById("amount");
 const statusCache = document.getElementById("status");
@@ -13,24 +14,25 @@ var globalResults = [];
 var selectedWords = [];
 var selectedValues = [];
 var pageFrequency = [];
-var currentAllFrequency = {};
+var currentAllWords = new Set();
 var allOriginals = {};
 var cachedSynonyms = {};
 
 function clearResults() {
+    backButton.disabled = true;
     content.innerHTML = "<h2>Fetching Results From Bing</h2>\
                         <h3>If nothing shows up, this is because it reached limit of the BING API (which has no way to solve except changing API key)</h3>\
                         <h3>Please use fake search to simulate a search, which uses the pre-stored results that we use for save resource when testing</h3>";
     wordbars.innerHTML = "";
     selection.innerHTML = "";
-    statusCache.innerHTML = "X";
-    statusCache.style = "color:red;"
+    statusCache.innerHTML = "fetching the rest";
+    statusCache.style = "color:red;";
     cachePromise = null;
     globalResults = [];
     selectedWords = [];
     selectedValues = [];
     pageFrequency = [];  // it is actually already reassignd, see below
-    currentAllFrequency = {};
+    currentAllWords = new Set();
     allOriginals = {};
     cachedSynonyms = {};
 }
@@ -55,12 +57,12 @@ async function fetchSynonyms(freqArr, isAll) {
             for (let stem in synonyms) {
                 cachedSynonyms[stem] = synonyms[stem];
             }
-            console.log("RUN");
+            // console.log("RUN");  // should only occur twice per search
             if (isAll) {
                 cachePromise = true;
-                statusCache.innerHTML = "V";
-                statusCache.style = "color:green;"
-                console.log("DONE");
+                statusCache.innerHTML = "All fetched";
+                statusCache.style = "color:green;";
+                // console.log("DONE");  // should only occur once per search
             }
         });
 }
@@ -71,14 +73,15 @@ async function showData() {
     pageFrequency = frequency.slice(0, 40);  // based on first reference, 40 is a good amount
     wordbars.innerHTML = "";
 
+    currentAllWords = new Set();
     for (let [x, y] of frequency) {
-        currentAllFrequency[x] = y;
+        currentAllWords.add(x);
     }
 
     // we must wait the first 40 to show at the beginning
     // create the promise to find all synonym sets, should ONLY run once per search
     if (cachePromise) {
-        content.innerHTML = "<h2>Waiting for all synonym sets to be found</h2>";
+        content.innerHTML = "<h2>Waiting for all synonym sets to be fetched</h2>";
         await cachePromise;
     }
     else {
@@ -107,7 +110,9 @@ async function showData() {
 }
 
 function showWordBars() {
+    backButton.disabled = true;
     html_str = "";  // do NOT add up on innerHTML (can cause lag)
+    wordbars.scrollTo(0, 0);
     pageFrequency.forEach((freq, index) => {
         html_str += `<div onclick="clickWordBars(${index})">${allOriginals[freq[0]][0]}: ${freq[1]}</div>`;
     });
@@ -115,24 +120,57 @@ function showWordBars() {
 }
 
 function clickWordBars(index) {
-    html_str = "<button onclick=showWordBars()>BACK</button></br>";
-    synonymTable = cachedSynonyms[pageFrequency[index][0]];
-    html_str += `<div onclick=clickWordNet(${index},'',-1)>
+    root_word = pageFrequency[index][0];
+    synonymTable = cachedSynonyms[root_word];
+    html_str = `<div onclick=clickWordNet(${index},'',-1)>
                 <h4>single word selection</h4>
-                <div>${allOriginals[pageFrequency[index][0]][0]}</div></div>`;
+                <div>${allOriginals[root_word][0]}</div></div>`;
+
+    valid_str = {}, invalid_str = {};
     for (tense in synonymTable) {
-        html_str += `<h3>${tense}</h3>`;
+        valid_str[tense] = [];
+        invalid_str[tense] = [];
+
         for (let i = 0; i < synonymTable[tense].length; i++) {
             table = synonymTable[tense][i];
-            html_str += `<div onclick=clickWordNet(${index},'${tense}',${i})>`;
-            html_str += `<h4>${table["def"]}</h4>`;
-            for (synonym of table["synonyms"]) {
-                html_str += `<div>${synonym}</div>`;
+
+            let temp_str = "";
+            let isValid = false;
+            for (let j = 0; j < table["synonyms"].length; j++) {
+                let color = "black";
+                if (currentAllWords.has(table["stemmeds"][j])) {
+                    isValid |= root_word != table["stemmeds"][j];
+                }
+                else {
+                    color = "grey";
+                }
+                temp_str += `<div style="color:${color};">${table["synonyms"][j]}</div>`;
             }
-            html_str += "</div>";
+
+            if (isValid) {
+                valid_str[tense].push(`<div onclick="clickWordNet(${index},'${tense}',${i})" 
+                            style="background-color: lightgreen;">
+                            <h4>${table["def"]}</h4>${temp_str}</div>`);
+            }
+            else {
+                invalid_str[tense].push(`<div onclick="alert('This is an ineffective synonym set!!!')" 
+                            style="background-color: darkgrey;">
+                            <h4>${table["def"]}</h4>${temp_str}</div>`);
+            }
         }
     }
+
+    for (tables of [valid_str, invalid_str]) {
+        for (tense in synonymTable) {
+            if (tables[tense].length > 0) {
+                html_str += `<h3 style="text-align:center;">${tense}</h3>` + tables[tense].join("");
+            }
+        }
+    }
+
     wordbars.innerHTML = html_str;
+    wordbars.scrollTo(0, 0);
+    backButton.disabled = false;
 }
 
 async function clickWordNet(index, tense, synonymIndex) {
@@ -166,6 +204,9 @@ async function clickSelection(index) {
 
     await showData();
 }
+
+
+backButton.onclick = showWordBars;
 
 searchButton.onclick = async function () {
     // alert empty query and return with no other actions
