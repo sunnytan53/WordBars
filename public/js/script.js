@@ -2,12 +2,15 @@ const content = document.getElementById("content");
 const wordbars = document.getElementById("word-bars");
 const searchBox = document.getElementById("search-box");
 const searchButton = document.getElementById("search-button");
+const fileBox = document.getElementById("saved-files");
+const testButton = document.getElementById("test-button");
 const backButton = document.getElementById("back-button");
+const saveButton = document.getElementById("save-button");
 const selection = document.getElementById("selection");
 const amount = document.getElementById("amount");
 const statusCache = document.getElementById("status");
 
-var fetchFake = false;  // should only be controlled within the button click
+var fetchStored = false;  // should only be controlled within the button click
 var cachePromise = null;
 
 var globalResults = [];
@@ -18,25 +21,27 @@ var currentAllWords = new Set();
 var allOriginals = {};
 var cachedSynonyms = {};
 
+
+// simply reset every global variables
+// some of them are already reassigned, this part is for safer run
 function clearResults() {
     backButton.disabled = true;
-    content.innerHTML = "<h2>Fetching Results From Bing</h2>\
-                        <h3>If nothing shows up, this is because it reached limit of the BING API (which has no way to solve except changing API key)</h3>\
-                        <h3>Please use fake search to simulate a search, which uses the pre-stored results that we use for save resource when testing</h3>";
+    saveButton.disabled = true;
+    content.innerHTML = "<h2>Fetching Results From Bing</h2>";
     wordbars.innerHTML = "";
     selection.innerHTML = "";
-    statusCache.innerHTML = "fetching the rest";
-    statusCache.style = "color:red;";
+    statusCache.innerHTML = "";
     cachePromise = null;
     globalResults = [];
     selectedWords = [];
     selectedValues = [];
-    pageFrequency = [];  // it is actually already reassignd, see below
+    pageFrequency = [];
     currentAllWords = new Set();
     allOriginals = {};
     cachedSynonyms = {};
 }
 
+// FRONTEND - Sunny
 async function fetchSynonyms(freqArr, isAll) {
     let uncahced = {};
     for (let [stem, freq] of freqArr) {
@@ -67,7 +72,22 @@ async function fetchSynonyms(freqArr, isAll) {
         });
 }
 
-// FRONTEND - Sunny
+// load this at initialization
+loadSavedFiles();
+function loadSavedFiles() {
+    fileBox.innerHTML = "<option disabled selected value> -- select -- </option>";
+    fetch("/getsave", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+        .then(res => res.json())
+        .then(data => {
+            for (file of data) {
+                fileBox.innerHTML += `<option value="${file}">${file.substring(0, file.indexOf("."))}</option>`;
+            }
+        });
+}
+
 async function showData() {
     let [results, frequency] = getResults(selectedWords);
     pageFrequency = frequency.slice(0, 40);  // based on first reference, 40 is a good amount
@@ -78,15 +98,21 @@ async function showData() {
         currentAllWords.add(x);
     }
 
-    // we must wait the first 40 to show at the beginning
-    // create the promise to find all synonym sets, should ONLY run once per search
     if (cachePromise) {
+        // if cachePromise really exists (either a real promise or just true boolean)
+        // we must wait to get this backend finish finding all synonym sets
         content.innerHTML = "<h2>Waiting for all synonym sets to be fetched</h2>";
         await cachePromise;
     }
     else {
         content.innerHTML = "<h2>Fetching synonym set from WordNet for <u>first 40 frequency</u></h2>";
+        statusCache.innerHTML = "finding synonyms of top-freq word";
+        statusCache.style = "color:red;";
+        // we must wait the first 40 to show at the beginning
         await fetchSynonyms(pageFrequency, false);
+        statusCache.innerHTML = "finding synonyms of low-freq word";
+        statusCache.style = "color:orange;";
+        // create the promise to find all synonym sets, should ONLY run once per search
         cachePromise = fetchSynonyms(frequency.slice(40), true);
     }
 
@@ -105,10 +131,9 @@ async function showData() {
         content.appendChild(document.createElement("br"));
     });
     amount.innerHTML = results.length;
+    saveButton.disabled = false;
 
     showWordBars();
-    console.log(selectedWords);
-    console.log(selectedValues);
 }
 
 function showWordBars() {
@@ -177,7 +202,6 @@ function clickWordBars(index) {
 
 async function clickWordNet(index, tense, synonymIndex) {
     root_word = pageFrequency[index][0];
-    unique = "";
 
     if (tense == "") {
         unique = root_word;
@@ -221,35 +245,84 @@ async function clickSelection(index) {
     await showData();
 }
 
-
 backButton.onclick = showWordBars;
 
 searchButton.onclick = async function () {
-    // alert empty query and return with no other actions
-    let query = searchBox.value;
-    if (!query) {
-        alert("Query (Search Box) can NOT be empty!");
-        return;
-    }
-
     // remove old results, also tell users we are fetching new results
     clearResults();
 
-    // fetch max allowed amount of results
-    // based on API Doc, this amount is 50, but after test, it is only 20
-    let fetched = await fetch(
-        fetchFake ? "/fake" : "https://api.bing.microsoft.com/v7.0/search?count=50&q=" + query,
-        { headers: { "Ocp-Apim-Subscription-Key": "68dc5cf46ecc419688a1066dd7b2b9d5" } })
-        .then(response => response.json())
-        .then(data => data["webPages"]["value"]);
+    if (fetchStored) {
+        if (!fileBox.value) {
+            alert("File name (select box) can NOT be empty!");
+            content.innerHTML = "";
+            return;
+        }
+        try {
+            await fetch("/getsavefile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify([fileBox.value])
+            })
+                .then(res => res.json())
+                .then(data => globalResults = data);
+            console.log(globalResults);
+        }
+        catch {
+            content.innerHTML = `<h3>Can't find this file: ${fileBox.value}</h3>`;
+            return;
+        }
+    }
+    else {
+        // alert empty query and return with no other actions
+        let query = searchBox.value;
+        if (!query) {
+            alert("Query (Search Box) can NOT be empty!");
+            content.innerHTML = "";
+            return;
+        }
 
-    // push them to backend globalResults
-    for (let result of fetched) {
-        globalResults.push({
-            "title": result["name"],
-            "snippet": result["snippet"],
-            "url": result["url"],
-        });
+        try {
+            statusCache.innerHTML = "fetching web pages";
+            statusCache.style = "color:red;";
+
+            // fetch 3 times, but it doesn't guarantee it has 60 results (> 3 sometimes fail)
+            for (let i = 0; i < 3; i++) {
+                let fetched = await fetch( // even though I said 50, this includes other resources such as images
+                    "https://api.bing.microsoft.com/v7.0/search?count=50&offset=" + i * 50 + "&q=" + query,
+                    { headers: { "Ocp-Apim-Subscription-Key": "68dc5cf46ecc419688a1066dd7b2b9d5" } })
+                    .then(response => response.json())
+                    .then(data => data["webPages"]["value"]);
+
+                // push them to backend globalResults
+                for (let result of fetched) {
+                    globalResults.push({
+                        "title": result["name"],
+                        "snippet": result["snippet"],
+                        "url": result["url"],
+                    });
+                }
+            }
+        }
+        catch {
+            if (globalResults.length == 0) {
+                content.innerHTML = "<h3>Unfortunately, the Bing API says we reached the limit, so only fake search works now</h3>";
+                return;
+            }
+            else {
+                alert(`<h3>There are too many requests/fetches at once so that Bing bans us, but there are still results</h3>
+                <h3>If you want all results from fetches, try fetch again, this sometimes happen</h3>`);
+            }
+        }
+
+        let set = new Set();
+        let realResults = [];
+        for (result of globalResults) {
+            if (!set.has(result["url"])) {
+                set.add(result["url"]);
+                realResults.push(result);
+            }
+        }
+        globalResults = realResults;
     }
 
     await processResults();
@@ -265,14 +338,26 @@ searchBox.addEventListener("keypress", async function (event) {
     }
 });
 
-
-const testButton = document.getElementById("test-button");
 testButton.onclick = async function () {
-    searchBox.value = "computer science";
-    fetchFake = true;
+    fetchStored = true;
     await searchButton.click();
-    fetchFake = false;
+    fetchStored = false;
 };
+
+saveButton.onclick = function () {
+    if (!searchBox.value) {
+        alert("Value of search box is required for file name!");
+        return;
+    }
+    fetch("/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([searchBox.value, globalResults])
+    });
+    loadSavedFiles();
+};
+
+
 
 
 
