@@ -48,7 +48,7 @@ function loadSavedFiles() {
         .then(res => res.json())
         .then(data => {
             for (file of data) {
-                fileBox.innerHTML += `<option value="${file}">${file.substring(0, file.indexOf("."))}</option>`;
+                fileBox.innerHTML += `<option value="${file}">${file.substring(0, file.lastIndexOf("."))}</option>`;
             }
         });
 }
@@ -379,6 +379,8 @@ fileBox.onchange = async () => {
         content.innerHTML = `<h3>Can't find this file: ${fileBox.value}</h3>`;
         return;
     }
+
+    searchBox.value = fileBox.value.substring(0, fileBox.value.lastIndexOf("."));
 
     await processResults();
 
