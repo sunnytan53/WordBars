@@ -433,9 +433,9 @@ async function processResults() {
     // convert all set to list for better access and manipulation (Sunny)
     for (key in allOriginals) {
         arr = [...new Set(allOriginals[key])];
-        if (arr.length > 1) {
-            arr.sort((a, b) => a.length - b.length);
-        }
+        // if (arr.length > 1) {
+        //     arr.sort((a, b) => a.length - b.length);
+        // }
         allOriginals[key] = arr;
     }
 }
