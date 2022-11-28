@@ -481,6 +481,18 @@ function getResults(selectedWords) {
         theResult = theResult.slice(0, 10);
     }
 
+    // for (let i = 0; i < 10; i++) {
+    //     str = `${i} - `;
+    //     for (wordle of selectedWords) {
+    //         for (word of wordle) {
+    //             if (theResult[i]["frequency"].has(word)) {
+    //                 str += `${word}: ${theResult[i]["frequency"].get(word)} `;
+    //             }
+    //         }
+    //     }
+    //     console.log(str);
+    // }
+
     return [theResult, getSumFrequency(theResult)];
 }
 
@@ -493,15 +505,15 @@ function getResultsBySelectedWords(selectedWords) {
     globalResults.forEach(result => {
         let count = 0;
         let allSum = 0;
-        for (let wordle of selectedWords) { // for eac synonym set
+        for (let wordle of selectedWords) { // for each synonym set
             let oneSum = 0;
-            for (let word of wordle) {  // each word of  synonym set
+            for (let word of wordle) {  // each word of synonym set
                 if (result["frequency"].has(word)) {
                     oneSum += result["frequency"].get(word);
                 }
             }
             if (oneSum > 0) {
-                count++;  // count how many synonym set is worked
+                count++;  // count how many synonym set is matched
             }
             allSum += oneSum;
         }
