@@ -177,10 +177,12 @@ function showWordBars() {
 
 function clickWordBars(index) {
     root_word = pageFrequency[index][0];
+    wordToShow = allOriginals[root_word][0];
     synonymTable = cachedSynonyms[root_word];
+
     html_str = `<div onclick=clickWordNet(${index},'',-1) style="cursor: pointer; background-color: lightgreen;">
                 <h3>single word selection</h3>
-                <div>${allOriginals[root_word][0]}</div></div>`;
+                <div>${wordToShow}</div></div>`;
 
     valid_str = {}, invalid_str = {};
     for (tense in synonymTable) {
@@ -263,7 +265,28 @@ async function clickWordNet(index, tense, synonymIndex) {
     await showData();
 }
 
-async function clickSelection(index) {
+async function addToQuery(word) {
+    searchBox.value += " " + word;
+    await searchButton.click();
+}
+
+function clickSelection(index) {
+    select = selection.children[index].textContent
+    html_str = `<div onclick=removeSelection(${index})
+                style="cursor: pointer; text-align: center; background-color: pink;">
+                <h4>Remove this selection:</br>${select}</h4></div>`;
+
+    words = select.split(" | ");
+    for (word of words) {
+        html_str += `<div onclick=addToQuery('${word}')
+                    style="cursor: pointer; text-align: center; background-color: lightgreen;">
+                    <h4>Add <u>${word}</u> to query</h4></div>`
+    }
+
+    wordbars.innerHTML = html_str;
+}
+
+async function removeSelection(index) {
     selectedWords.splice(index, 1);
     selectedValues.splice(index, 1);
     selection.removeChild(selection.children[index]);
