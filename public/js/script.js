@@ -155,6 +155,8 @@ async function showData() {
     saveButton.disabled = false;
 
     showWordBars();
+
+    checkbox.disabled = selectedWords.length < 1;
 }
 
 function showWordBars() {
@@ -271,7 +273,7 @@ async function addToQuery(word) {
 }
 
 function clickSelection(index) {
-    select = selection.children[index].textContent
+    select = selection.children[index].textContent;
     html_str = `<div onclick=removeSelection(${index})
                 style="cursor: pointer; text-align: center; background-color: pink;">
                 <h4>Remove this selection:</br>${select}</h4></div>`;
@@ -280,7 +282,7 @@ function clickSelection(index) {
     for (word of words) {
         html_str += `<div onclick=addToQuery('${word}')
                     style="cursor: pointer; text-align: center; background-color: lightgreen;">
-                    <h4>Add <u>${word}</u> to query</h4></div>`
+                    <h4>Add <u>${word}</u> to query</h4></div>`;
     }
 
     wordbars.innerHTML = html_str;
