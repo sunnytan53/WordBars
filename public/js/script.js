@@ -155,8 +155,6 @@ async function showData() {
     saveButton.disabled = false;
 
     showWordBars();
-
-    checkbox.disabled = selectedWords.length < 1;
 }
 
 function showWordBars() {
