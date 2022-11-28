@@ -480,15 +480,15 @@ function getResultsBySelectedWords(selectedWords) {
             }
             allSum += oneSum;
         }
-        if (checkbox.checked) {
+        if (count > 0) {
             // show results based on sum * count of fit groups
             // this ensure the results match all groups stay on top
             resultsContainingSelectedWords.push([result, allSum * count]);
         }
-        else if (count == selectedWords.length && allSum > 0) {
-            // show results that fits all groups (AND relationship)
-            resultsContainingSelectedWords.push([result, allSum]);
-        }
+        // else if (count == selectedWords.length && allSum > 0) {
+        //     // show results that fits all groups (AND relationship)
+        //     resultsContainingSelectedWords.push([result, allSum]);
+        // }
     });
     //sort array
     sorted = resultsContainingSelectedWords.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
