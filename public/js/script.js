@@ -4,15 +4,22 @@ const searchBox = document.getElementById("search-box");
 const searchButton = document.getElementById("search-button");
 const fileBox = document.getElementById("saved-files");
 const backButton = document.getElementById("back-button");
-const saveButton = document.getElementById("save-button");
 const selection = document.getElementById("selection");
 const amount = document.getElementById("amount");
 const checkbox = document.getElementById("checkbox");
 
+// by default, we hide the feature of using pre-saved results
+// this is avoid the problem of not able to read file correctly
+fileBox.hidden = false;
+
+// load only if fileBox is not hidden (which means you want to enable it)
+if (!fileBox.hidden) {
+    loadSavedFiles();
+}
 
 var globalResults = [];
-var selectedWords = [];
-var selectedValues = [];  // since I used splice(), so not using Set
+var selectedWordsOrSynonyms = [];
+var selectionID = [];
 var pageFrequency = [];
 var currentAllWords = new Set();
 var allOriginals = {};
@@ -23,22 +30,19 @@ var cachedSynonyms = {};
 // some of them are already reassigned, this part is for safer run
 function clearResults() {
     backButton.disabled = true;
-    saveButton.disabled = true;
     content.innerHTML = "<h2>Fetching Results From Bing</h2>";
     wordbars.innerHTML = "";
     selection.innerHTML = "";
 
     globalResults = [];
-    selectedWords = [];
-    selectedValues = [];
+    selectedWordsOrSynonyms = [];
+    selectionID = [];
     pageFrequency = [];
     currentAllWords = new Set();
     allOriginals = {};
     cachedSynonyms = {};
 }
 
-// load this at initialization
-loadSavedFiles();
 function loadSavedFiles() {
     fileBox.innerHTML = "<option disabled selected value> -- select -- </option>";
     fetch("/getsave", {
@@ -81,34 +85,8 @@ async function fetchSynonyms(freqArr) {
     }
 }
 
-// ABANDON, this is really unnnecassary, because there are too many words to load up
-// fetch all (this should not be waited, just let it stay at the backend)
-// async function fetchAllSynonyms(freqArr) {
-//     let uncahced = {};
-//     for (let [stem, freq] of freqArr) {
-//         uncahced[stem] = allOriginals[stem];
-//     }
-
-//     // *** it is important to cache synonyms for each search since it takes some time
-//     // the module support cache but it is actually slower in terms of user experience
-//     return fetch("/wordnet", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(uncahced)
-//     })
-//         .then(response => response.json())
-//         .then(synonyms => {
-//             for (let stem in synonyms) {
-//                 cachedSynonyms[stem] = synonyms[stem];
-//             }
-//             cachePromise = true;
-//             statusCache.innerHTML = "All fetched";
-//             statusCache.style = "color:green;";
-//         });
-// }
-
 async function showData() {
-    let [results, frequency] = getResults(selectedWords);
+    let [results, frequency] = getResults(selectedWordsOrSynonyms);
     pageFrequency = frequency.slice(0, 40);  // based on first reference, 40 is a good amount
     wordbars.innerHTML = "";
 
@@ -119,23 +97,6 @@ async function showData() {
 
     content.innerHTML = "<h2>Fetching synonym set from WordNet for <u>first 40 frequency</u></h2>";
     await fetchSynonyms(pageFrequency);
-
-    // ABANDON, there are too many words to load up
-    // it is better to load up small partial each time (which takes < 1 second)
-    // if (cachePromise === null) {  // run when a search init
-    //     statusCache.innerHTML = "finding synonyms (low-freq)";
-    //     statusCache.style = "color:orange;";
-    //     // create the promise to find all synonym sets, should ONLY run once per search
-    //     fetchAllSynonyms(frequency.slice(40));
-    //     cachePromise = false;
-    // }
-    // if (!cachePromise) {
-    //     // we must wait the frequency shown on the page
-    //     content.innerHTML = "<h2>Fetching synonym set from WordNet for <u>first 40 frequency</u></h2>";
-    //     statusCache.innerHTML = "finding synonyms (top-freq)";
-    //     statusCache.style = "color:red;";
-    //     await fetchSynonyms(pageFrequency);
-    // }
 
     // do NOT use raw concatnation to avoid *injection* (found when searching "css style")
     content.innerHTML = "";
@@ -152,7 +113,6 @@ async function showData() {
         content.appendChild(document.createElement("br"));
     });
     amount.innerHTML = results.length;
-    saveButton.disabled = false;
 
     showWordBars();
 }
@@ -176,9 +136,9 @@ function showWordBars() {
 }
 
 function clickWordBars(index) {
-    root_word = pageFrequency[index][0];
-    wordToShow = allOriginals[root_word][0];
-    synonymTable = cachedSynonyms[root_word];
+    rootWord = pageFrequency[index][0];
+    wordToShow = allOriginals[rootWord][0];
+    synonymTable = cachedSynonyms[rootWord];
 
     html_str = `<div onclick=clickWordNet(${index},'',-1) style="cursor: pointer; background-color: lightgreen;">
                 <h3>single word selection</h3>
@@ -197,7 +157,7 @@ function clickWordBars(index) {
             for (let j = 0; j < table["synonyms"].length; j++) {
                 let color = "black";
                 if (currentAllWords.has(table["stemmeds"][j])) {
-                    isValid |= root_word != table["stemmeds"][j];
+                    isValid |= rootWord != table["stemmeds"][j];
                 }
                 else {
                     color = "grey";
@@ -232,15 +192,15 @@ function clickWordBars(index) {
 }
 
 async function clickWordNet(index, tense, synonymIndex) {
-    root_word = pageFrequency[index][0];
+    rootWord = pageFrequency[index][0];
 
     if (tense == "") {
-        unique = root_word;
-        word = [root_word];
+        unique = rootWord;
+        word = [rootWord];
         str = allOriginals[unique][0];
     }
     else {
-        let table = cachedSynonyms[root_word][tense][synonymIndex];
+        let table = cachedSynonyms[rootWord][tense][synonymIndex];
         unique = table["def"];
         arr = [];
         for (let j = 0; j < table["synonyms"].length; j++) {
@@ -253,14 +213,14 @@ async function clickWordNet(index, tense, synonymIndex) {
     }
 
 
-    if (selectedValues.includes(unique)) {
+    if (selectionID.includes(unique)) {
         alert("Repeated selection!!!");
         return;
     }
-    selectedValues.push(unique);
+    selectionID.push(unique);
 
-    selection.innerHTML += `<button onclick="clickSelection(${selectedWords.length})">${str}</button>`;
-    selectedWords.push(word);
+    selection.innerHTML += `&nbsp;<button onclick="clickSelection(${selectedWordsOrSynonyms.length})">${str}</button>&nbsp;`;
+    selectedWordsOrSynonyms.push(word);
 
     await showData();
 }
@@ -284,11 +244,12 @@ function clickSelection(index) {
     }
 
     wordbars.innerHTML = html_str;
+    backButton.disabled = false;
 }
 
 async function removeSelection(index) {
-    selectedWords.splice(index, 1);
-    selectedValues.splice(index, 1);
+    selectedWordsOrSynonyms.splice(index, 1);
+    selectionID.splice(index, 1);
     selection.removeChild(selection.children[index]);
     for (; index < selection.children.length; index++) {
         selection.children[index].setAttribute("onclick", `clickSelection(${index})`);
@@ -364,7 +325,7 @@ searchBox.addEventListener("keypress", async function (event) {
     }
 });
 
-saveButton.onclick = function () {
+function saveResults() {
     if (!searchBox.value) {
         alert("Value of search box is required for file name!");
         return;
@@ -378,9 +339,6 @@ saveButton.onclick = function () {
 };
 
 fileBox.onchange = async () => {
-    if (fileBox.value == "") {  // ignore empty selection
-        return;
-    }
     if (!fileBox.value) {
         alert("File name (select box) can NOT be empty!");
         content.innerHTML = "";
@@ -479,18 +437,6 @@ function getResults(selectedWords) {
         theResult = theResult.slice(0, 10);
     }
 
-    // for (let i = 0; i < 10; i++) {
-    //     str = `${i} - `;
-    //     for (wordle of selectedWords) {
-    //         for (word of wordle) {
-    //             if (theResult[i]["frequency"].has(word)) {
-    //                 str += `${word}: ${theResult[i]["frequency"].get(word)} `;
-    //             }
-    //         }
-    //     }
-    //     console.log(str);
-    // }
-
     return [theResult, getSumFrequency(theResult)];
 }
 
@@ -515,18 +461,25 @@ function getResultsBySelectedWords(selectedWords) {
             }
             allSum += oneSum;
         }
+        // only keep results that fits at least one group
         if (count > 0) {
-            // show results based on sum * count of fit groups
-            // this ensure the results match all groups stay on top
-            resultsContainingSelectedWords.push([result, allSum * count]);
+            resultsContainingSelectedWords.push([result, count, allSum]);
         }
-        // else if (count == selectedWords.length && allSum > 0) {
-        //     // show results that fits all groups (AND relationship)
-        //     resultsContainingSelectedWords.push([result, allSum]);
-        // }
     });
-    //sort array
-    sorted = resultsContainingSelectedWords.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
+    // sort array
+    // first check fitted group count -> ensure results match more groups are top
+    // second check the total frequency of matched words
+    sorted = resultsContainingSelectedWords.sort((f1, f2) => {
+        if (f1[1] == f2[1]) {
+            return f2[2] - f1[2];  // more frequency of fit words -> order higer
+        }
+        else {
+            return f2[1] - f1[1];  // more fit groups -> order higher
+        }
+    });
+
+    // console.log(resultsContainingSelectedWords);
+
     ret = [];
     for (arr of sorted) {
         ret.push(arr[0]);
@@ -554,55 +507,3 @@ function getSumFrequency(results) {
     freqArr = freqArr.sort((f1, f2) => (f1[1] < f2[1]) ? 1 : (f1[1] > f2[1]) ? -1 : 0);
     return freqArr;
 }
-
-// ### Integrated into processResults() for server side
-// async function addResult(title, snippet, url) {
-//     let [original, stemmed] = await fetch("/stem", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json"},
-//         body: JSON.stringify({"data": (title + " " + snippet)
-//                                         .replace(/[0-9]/g, "")
-//                                         .toLowerCase()})
-//     })
-//     .then(response => response.json());
-
-//     globalResults.push({
-//         "title": title,
-//         "snippet": snippet,
-//         "url": url,
-//         "frequency": getLocalFrequencyTable(stemmed),
-//     });
-// }
-
-// ### Integrated into processResults() for server side 
-// function getLocalFrequencyTable(data) {
-//     let frequencyTable = new Map();
-//     data.forEach(element => {
-//         if (frequencyTable.has(element)) {
-//             frequencyTable.set(element, frequencyTable.get(element) + 1);
-//         }
-//         else {
-//             frequencyTable.set(element, 1);
-//         }
-//     })
-//     return frequencyTable;
-// }
-
-// ### Integrated into app.js with module for server side
-// function remove_common_words(results) {
-//     // you get a json object
-//     //let whole_str = result["title"] + result["snippet"];
-//     var uselessWordsArray = 
-//         [
-//           "a", "at", "be", "can", "cant", "could", "couldnt", 
-//           "do", "does", "how", "i", "in", "is", "many", "much", "of", 
-//           "on", "or", "should", "shouldnt", "so", "such", "the", 
-//           "them", "they", "to", "us",  "we", "what", "who", "why", 
-//           "with", "wont", "would", "wouldnt", "you"
-//         ];
-//     results = ' ' + results + ' ';
-//     results = results.toLowerCase().replace(/\s+/g, ' ').trim();    
-// 	results = results.replace(/[^a-zA-Z0-9 ]/g, '');
-//     results.replace(uselessWordsArray, '');
-//     return results;
-// }
