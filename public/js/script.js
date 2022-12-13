@@ -1,3 +1,4 @@
+//Get Elements
 const content = document.getElementById("content");
 const wordbars = document.getElementById("word-bars");
 const searchBox = document.getElementById("search-box");
@@ -230,6 +231,7 @@ async function addToQuery(word) {
     await searchButton.click();
 }
 
+//Allow user to Click on the words in the frequency area
 function clickSelection(index) {
     select = selection.children[index].textContent;
     html_str = `<div onclick=removeSelection(${index})
@@ -423,7 +425,7 @@ async function processResults() {
 
 
 
-
+//Gets Results and linked to the selected words
 function getResults(selectedWords) {
     theResult = null;
     if (selectedWords.length == 0) {
@@ -487,6 +489,7 @@ function getResultsBySelectedWords(selectedWords) {
     return ret;
 }
 
+//For each result, get the set the frequency of each word inside
 function getSumFrequency(results) {
     let localFrequency = new Map();
     results.forEach(result => {
