@@ -15,6 +15,8 @@ So it is required to install node and npm to run this project.
 
 5. If you see "Host at: http://localhost:3030", you can now access the application!
 
+
+
 Some problems you may ecounter (in case):
 
 --- The server port 3030 was used
@@ -24,8 +26,16 @@ Some problems you may ecounter (in case):
     You PC will asks you to give permission of network usage.
     Simply click YES, and it won't prompt for next time.
 
+--- Searching stuck on "fetching results from BING", or show "API reaches limit
+    This is the only thing we don't want you to ecounter,
+    because this has no way to fix it since this is the limit from Bing API.
+    Although you can still use the client files to simulate a search.
+    This can be done by changing file "public/js/script.js"
+    on line 14, and change "true" to "false".
+    This allows the application to load pre-store results from folder "saved"
+
 --- No file permission
     This is because it sometimes load client files.
     We don't expect thi to happen since your environment
     should allow for reading and writing files.
-    
+
