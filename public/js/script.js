@@ -1,4 +1,4 @@
-//Get Elements
+// get elements from index.html
 const content = document.getElementById("content");
 const wordbars = document.getElementById("word-bars");
 const searchBox = document.getElementById("search-box");
@@ -10,25 +10,40 @@ const amount = document.getElementById("amount");
 const checkbox = document.getElementById("checkbox");
 
 // by default, we hide the feature of using pre-saved results
-// this is avoid the problem of not able to read file correctly
-fileBox.hidden = false;
+// ONLY if the API reaches limit, then we should use pre-saved results
+fileBox.hidden = true;
 
-// load only if fileBox is not hidden (which means you want to enable it)
 if (!fileBox.hidden) {
     loadSavedFiles();
 }
 
-var globalResults = [];
-var selectedWordsOrSynonyms = [];
-var selectionID = [];
-var pageFrequency = [];
-var currentAllWords = new Set();
-var allOriginals = {};
-var cachedSynonyms = {};
+// load saved files from the directory for direct fetch
+function loadSavedFiles() {
+    fileBox.innerHTML = "<option disabled selected value> -- select -- </option>";
+    fetch("/getsave", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+        .then(res => res.json())
+        .then(data => {
+            for (file of data) {
+                fileBox.innerHTML += `<option value="${file}">${file.substring(0, file.lastIndexOf("."))}</option>`;
+            }
+        });
+}
+
+// global varibles that can be used in different functions
+var globalResults = [];  // store results in one search
+var selectedWordsOrSynonyms = [];  // selected groups
+var selectionID = [];  // identification of selected groups
+var pageFrequency = [];  // top 40 frequency on page results, not gloabl!
+var currentAllWords = new Set();  // all words appeard in the current page, not global!
+var allOriginals = {};  // key: root word, value: array of original form appeared in the global results
+var cachedSynonyms = {};  // key: root word, value: fetched synonyms
 
 
 // simply reset every global variables
-// some of them are already reassigned, this part is for safer run
+// some of them are already reassigned, this part is for safety
 function clearResults() {
     backButton.disabled = true;
     content.innerHTML = "<h2>Fetching Results From Bing</h2>";
@@ -44,24 +59,12 @@ function clearResults() {
     cachedSynonyms = {};
 }
 
-function loadSavedFiles() {
-    fileBox.innerHTML = "<option disabled selected value> -- select -- </option>";
-    fetch("/getsave", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-    })
-        .then(res => res.json())
-        .then(data => {
-            for (file of data) {
-                fileBox.innerHTML += `<option value="${file}">${file.substring(0, file.lastIndexOf("."))}</option>`;
-            }
-        });
-}
-
-// fetch partial (this should be waited)
+// fetch synonyms from the frequency array (this should return a promise)
 async function fetchSynonyms(freqArr) {
     let uncahced = {};
     let hasNew = false;
+
+    // capture uncached root words to save time
     for (let [stem, freq] of freqArr) {
         if (!(stem in cachedSynonyms)) {
             uncahced[stem] = allOriginals[stem];
@@ -70,7 +73,6 @@ async function fetchSynonyms(freqArr) {
     }
 
     // *** it is important to cache synonyms for each search since it takes some time
-    // the module support cache but it is actually slower in terms of user experience
     if (hasNew) {
         return fetch("/wordnet", {
             method: "POST",
@@ -86,6 +88,7 @@ async function fetchSynonyms(freqArr) {
     }
 }
 
+// show the sorted results and find the synonyms on wordbars
 async function showData() {
     let [results, frequency] = getResults(selectedWordsOrSynonyms);
     pageFrequency = frequency.slice(0, 40);  // based on first reference, 40 is a good amount
@@ -97,12 +100,12 @@ async function showData() {
     }
 
     content.innerHTML = "<h2>Fetching synonym set from WordNet for <u>first 40 frequency</u></h2>";
-    await fetchSynonyms(pageFrequency);
+    await fetchSynonyms(pageFrequency);  // must wait for this fetch
 
-    // do NOT use raw concatnation to avoid *injection* (found when searching "css style")
+    // do NOT use raw concatnation to avoid *injection* (bug found when searching "css style")
     content.innerHTML = "";
     content.scrollTo(0, 0);
-    results.forEach(rs => {
+    results.forEach(rs => {  // format each result
         const div = document.createElement("div");
         const link = document.createElement("a");
         link.href = rs["url"];
@@ -118,14 +121,15 @@ async function showData() {
     showWordBars();
 }
 
+// show the top40 frequency and assign a hot color based on freuqency
 function showWordBars() {
     backButton.disabled = true;
     html_str = "";  // do NOT add up on innerHTML (can cause lag)
     wordbars.scrollTo(0, 0);
 
-    maxFreq = pageFrequency[0][1];
+    maxFreq = pageFrequency[0][1];  // the first one is the max since it is sorted
     pageFrequency.forEach((freq, index) => {
-        rate = freq[1] / maxFreq;
+        rate = freq[1] / maxFreq;  // this gives the percentage compared to the max
 
         html_str += `<div onclick="clickWordBars(${index})" 
                     style="cursor: pointer; margin-bottom: 0.2em; 
@@ -136,15 +140,21 @@ function showWordBars() {
     wordbars.innerHTML = html_str;
 }
 
+// click WordBars should redirect to synonym selection
 function clickWordBars(index) {
     rootWord = pageFrequency[index][0];
     wordToShow = allOriginals[rootWord][0];
     synonymTable = cachedSynonyms[rootWord];
 
+    // the first selection is always single word selection (no sense)
     html_str = `<div onclick=clickWordNet(${index},'',-1) style="cursor: pointer; background-color: lightgreen;">
                 <h3>single word selection</h3>
                 <div>${wordToShow}</div></div>`;
 
+    // validty of synonym groups has two condition
+    // 1. at least two word in the group appears in the current page
+    // 2. at least two root words from 1
+    // this can help users to quickly find useful synonym groups
     valid_str = {}, invalid_str = {};
     for (tense in synonymTable) {
         valid_str[tense] = [];
@@ -179,6 +189,7 @@ function clickWordBars(index) {
         }
     }
 
+    // show valid synonym groups first
     for (tables of [valid_str, invalid_str]) {
         for (tense in synonymTable) {
             if (tables[tense].length > 0) {
@@ -192,9 +203,14 @@ function clickWordBars(index) {
     backButton.disabled = false;
 }
 
+// making a selection redirects to a sorting process
 async function clickWordNet(index, tense, synonymIndex) {
     rootWord = pageFrequency[index][0];
 
+    // we need three things to continue
+    // 1. id
+    // 2. selection array to pass in sorting
+    // 3. word to show in the selection bar 
     if (tense == "") {
         unique = rootWord;
         word = [rootWord];
@@ -213,7 +229,8 @@ async function clickWordNet(index, tense, synonymIndex) {
         word = table["stem"];
     }
 
-
+    // NOT allow for repeated selection
+    // this is what id is doing
     if (selectionID.includes(unique)) {
         alert("Repeated selection!!!");
         return;
@@ -226,20 +243,22 @@ async function clickWordNet(index, tense, synonymIndex) {
     await showData();
 }
 
+// simply add the word to the query and search
 async function addToQuery(word) {
     searchBox.value += " " + word;
     await searchButton.click();
 }
 
-//Allow user to Click on the words in the frequency area
+// clicking on selection redirects to remove selection or add to query
 function clickSelection(index) {
     select = selection.children[index].textContent;
+    // remove selection
     html_str = `<div onclick=removeSelection(${index})
                 style="cursor: pointer; text-align: center; background-color: pink;">
                 <h4>Remove this selection:</br>${select}</h4></div>`;
 
     words = select.split(" | ");
-    for (word of words) {
+    for (word of words) {  // add to query
         html_str += `<div onclick=addToQuery('${word}')
                     style="cursor: pointer; text-align: center; background-color: lightgreen;">
                     <h4>Add <u>${word}</u> to query</h4></div>`;
@@ -249,7 +268,12 @@ function clickSelection(index) {
     backButton.disabled = false;
 }
 
+// remove a selection
 async function removeSelection(index) {
+    // remove everything related to selection
+    // the inner stored selected words
+    // the inner stored id for unique
+    // the button shown in the website
     selectedWordsOrSynonyms.splice(index, 1);
     selectionID.splice(index, 1);
     selection.removeChild(selection.children[index]);
@@ -260,8 +284,9 @@ async function removeSelection(index) {
     await showData();
 }
 
-backButton.onclick = showWordBars;
+backButton.onclick = showWordBars;  // back can return to wordbars page
 
+// fetch results with a started query
 searchButton.onclick = async function () {
     clearResults();
     fileBox.value = "";  // this reset the file box
@@ -275,7 +300,7 @@ searchButton.onclick = async function () {
     }
 
     try {
-        // fetch 3 times, but it doesn't guarantee it has 60 results (> 3 sometimes fail)
+        // fetch 3 times, but it doesn't guarantee it has 60 results (> 3 will fail)
         for (let i = 0; i < 3; i++) {
             let fetched = await fetch( // even though I said 50, this includes other resources such as images
                 "https://api.bing.microsoft.com/v7.0/search?count=50&offset=" + i * 50 + "&q=" + query,
@@ -304,6 +329,8 @@ searchButton.onclick = async function () {
         }
     }
 
+    // remove duplicated results
+    // this sometimes happen when we fetch mutiple pages
     let set = new Set();
     let realResults = [];
     for (result of globalResults) {
@@ -327,6 +354,8 @@ searchBox.addEventListener("keypress", async function (event) {
     }
 });
 
+// save current results so we can directly use them in client side
+// this is hidden since it is for us to store these results
 function saveResults() {
     if (!searchBox.value) {
         alert("Value of search box is required for file name!");
@@ -340,6 +369,7 @@ function saveResults() {
     loadSavedFiles();
 };
 
+// fetching stored results
 fileBox.onchange = async () => {
     if (!fileBox.value) {
         alert("File name (select box) can NOT be empty!");
@@ -370,6 +400,7 @@ fileBox.onchange = async () => {
     await showData();
 };
 
+// show top 10 results, basically used for evaluation
 checkbox.onclick = async () => {
     if (globalResults.length > 0) {
         await showData();
@@ -377,12 +408,12 @@ checkbox.onclick = async () => {
 };
 
 
-// SERVER (mixed front- and back-end)
+// extract words from results and do the stemming
 async function processResults() {
     let strs = [];
     globalResults.forEach(result => strs.push(result["title"] + " " + result["snippet"]));
 
-    // send them all at once to save resource (Sunny)
+    // send them all at once to save resource
     let fetched = await fetch("/stem", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -394,7 +425,7 @@ async function processResults() {
         let frequencyTable = new Map();
 
         for (let [orig, stem] of fetched[i]) {  // for each word
-            // integrated from getLocalFrequencyTable() (Japheth)
+            // integrated from getLocalFrequencyTable()
             if (frequencyTable.has(stem)) {
                 frequencyTable.set(stem, frequencyTable.get(stem) + 1);
             }
@@ -402,23 +433,20 @@ async function processResults() {
                 frequencyTable.set(stem, 1);
             }
 
-            // store originals respected to all results (Sunny)
+            // store originals respected to all results
             if (!(stem in allOriginals)) {
                 allOriginals[stem] = [];
             }
             allOriginals[stem].push(orig);
         }
 
-        // store frequency table for each result (Japheth)
+        // store frequency table for each result
         globalResults[i]["frequency"] = frequencyTable;
     }
 
-    // convert all set to list for better access and manipulation (Sunny)
+    // convert all set to list for better access and manipulation
     for (key in allOriginals) {
         arr = [...new Set(allOriginals[key])];
-        // if (arr.length > 1) {
-        //     arr.sort((a, b) => a.length - b.length);
-        // }
         allOriginals[key] = arr;
     }
 }
